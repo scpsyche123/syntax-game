@@ -42,6 +42,8 @@ Conclusion "
 NewTactic complement
 NewDefinition «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
 
--- 若 lake build 后 "No world introducing …" warning 仍在(即 NewDefinition
--- 喂不饱 tactic 门禁),取消下面这行的注释,双轨并行:
--- NewHiddenTactic «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
+-- 双轨并行:NewDefinition 喂词汇/定义登记表(玩家词汇面板);
+-- NewHiddenTactic 喂 tactic 门禁(complement/specifier/adjoin 的参数 token
+-- 被门禁当指令盘查,单靠 NewDefinition 放不行,故此处显式放行)。
+-- 全九类一次登齐,后续关卡(L04 用 AP,L05 用 TP/DP/… )自动继承。
+NewHiddenTactic «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
