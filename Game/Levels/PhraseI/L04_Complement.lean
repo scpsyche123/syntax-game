@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 4
 
 Title "补足语与选择:及物动词打样"

@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 5
 
 Title "为什么造不出来"

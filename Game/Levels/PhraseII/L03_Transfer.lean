@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase II"
+World "PhraseII"
 Level 3
 
 Title "迁移关:自己组装一整句"

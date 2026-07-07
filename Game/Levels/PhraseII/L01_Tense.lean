@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase II"
+World "PhraseII"
 Level 1
 
 Title "从短语到小句:认识 T"

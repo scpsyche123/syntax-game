@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 2
 
 Title "空洞投射:从词到短语"

@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 8
 
 Title "右附接与副词"

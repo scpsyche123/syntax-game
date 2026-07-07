@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 6
 
 Title "附加语:可有可无,层级不变"

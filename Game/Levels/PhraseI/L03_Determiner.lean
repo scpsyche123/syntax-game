@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase I"
+World "PhraseI"
 Level 3
 
 Title "认识虚词:D 也是一个范畴"

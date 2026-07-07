@@ -7,7 +7,7 @@ import Game.Levels.PhraseI.L06_Adjunct
 import Game.Levels.PhraseI.L07_YouDecide
 import Game.Levels.PhraseI.L08_RightAdjunct
 
-World "Phrase I"
+World "PhraseI"
 Title "短语世界 I:短语内部"
 Introduction "
 X-bar 理论主张:一切短语共享同一套三层几何——

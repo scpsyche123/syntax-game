@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase II"
+World "PhraseII"
 Level 4
 
 Title "Colorless green ideas sleep furiously"

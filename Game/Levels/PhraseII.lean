@@ -3,7 +3,7 @@ import Game.Levels.PhraseII.L02_Complementizer
 import Game.Levels.PhraseII.L03_Transfer
 import Game.Levels.PhraseII.L04_Colorless
 
-World "Phrase II"
+World "PhraseII"
 Title "短语世界 II:从短语到句子"
 Introduction "
 短语怎么组成句子?这个世界带你认识两个撑起整句的功能中心语——

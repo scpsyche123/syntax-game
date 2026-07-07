@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "Phrase II"
+World "PhraseII"
 Level 2
 
 Title "整句的外壳:认识 C"
