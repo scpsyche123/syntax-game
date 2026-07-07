@@ -26,5 +26,22 @@ jobs:
           path: |
             game.zip
 
-      - name: What next?
-        run: echo "To export the game to the Game Server, open https://adam.math.hhu.de/import/trigger/${GITHUB_REPOSITORY,,} \n Afterwards, you can play the game at https://adam.math.hhu.de/#/g/${GITHUB_REPOSITORY,,}"
+      - name: trigger cloud import
+        run: curl -fsSL "https://adam.math.hhu.de/import/trigger/${GITHUB_REPOSITORY,,}"
+
+      - name: verify game is live
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          url="https://adam.math.hhu.de/data/g/${repo}/game.json"
+          for i in $(seq 1 30); do
+            body=$(curl -fsSL "$url" || true)
+            if [ -n "$body" ] && echo "$body" | head -c1 | grep -q '{'; then
+              echo "game.json is live: $url"
+              echo "Play at https://adam.math.hhu.de/#/g/${repo}"
+              exit 0
+            fi
+            echo "attempt $i/30: import not ready yet, waiting 10s..."
+            sleep 10
+          done
+          echo "::error::game.json did not become available after import trigger — check https://adam.math.hhu.de/import/trigger/${repo} manually"
+          exit 1
