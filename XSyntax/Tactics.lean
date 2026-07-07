@@ -113,6 +113,9 @@ private def closeUtters : TacticM Unit := do
             let said ← unsafe Meta.evalExpr String (.const ``String []) args[1]!
             throwError "✗ 这棵树念作 \"{said}\",不是目标 {args[2]!}"
 
+private def hasWhitespace (s : String) : Bool :=
+  s.any (fun c => c.isWhitespace)
+
 /-! Display an `Utters` goal as e.g. `DP：my house`. Expression-level constant
     checks (`isConstOf`) — immune to the notation-rewriting pitfall that breaks
     pattern-based unexpanders. Any mismatch → `failure` → default printing. -/
@@ -183,6 +186,9 @@ elab "nocomp" : tactic => do
 /-- Plant a word (or `""` for a null head) at an `X⁰` goal. -/
 elab "head" w:str : tactic => do
   enterUtters
+  let word := w.getString
+  if word != "" && hasWhitespace word then
+    throwError "✗ head 一次只能种一个词；多个词必须各自占一个 head，空头才写 `head \"\"`"
   let t ← goalType
   match asXTree? t with
   | some (b, _) =>

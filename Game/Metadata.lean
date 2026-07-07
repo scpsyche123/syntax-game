@@ -4,7 +4,7 @@ import XSyntax.Tactics
 /-! Tactic documentation for the player's instruction set.
     Each command is one X-bar rule. -/
 
-/-- `head "词"` —— 在 X⁰ 目标上种下一个词。空头(不发音的功能中心语)写 `head ""`。 -/
+/-- `head "词"` —— 在 X⁰ 目标上种下一个词；引号里只能是一个词。空头(不发音的功能中心语)写 `head ""`。 -/
 TacticDoc head
 
 /-- `nospec` —— 规则 XP → X′:这个短语没有 specifier,由 X′ 直接封顶。

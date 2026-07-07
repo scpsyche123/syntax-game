@@ -142,12 +142,6 @@ msgstr ""
 msgid "§0 —— 右附接:在 X′ 的右侧挂一个附加语,层级不变(X′ → X′ + 附加语)。"
 msgstr ""
 
-#. §0: `head \"词\"`
-#. §1: `head \"\"`
-#: Game.Metadata
-msgid "§0 —— 在 X⁰ 目标上种下一个词。空头(不发音的功能中心语)写 §1。"
-msgstr ""
-
 #. §0: `adjoinL XP`
 #: Game.Levels.XBar.L04_Adjunct
 msgid "目标:*my big house*。比上一关多了一个 *big*——形容词短语,作**附加语**(adjunct)。\n"
@@ -172,6 +166,12 @@ msgid "每棵句法树都从词开始。词从词库进入句法,站上的第一
 "目标面板上显示 §0:一个等待被填充的**名词性中心语位置**。\n"
 "\n"
 "把词种进去:输入 §1。"
+msgstr ""
+
+#. §0: `head \"词\"`
+#. §1: `head \"\"`
+#: Game.Metadata
+msgid "§0 —— 在 X⁰ 目标上种下一个词；引号里只能是一个词。空头(不发音的功能中心语)写 §1。"
 msgstr ""
 
 #: Game.Levels.XBar.L01_Head
