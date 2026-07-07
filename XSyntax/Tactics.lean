@@ -23,7 +23,7 @@ construction side — a design decision, pending.
 -/
 
 import Lean
-import XSyntax.TypeNotation
+import XSyntax.Display
 
 open Lean Elab Tactic Meta
 
@@ -120,24 +120,6 @@ private def hasWhitespace (s : String) : Bool :=
     checks (`isConstOf`) — immune to the notation-rewriting pitfall that breaks
     pattern-based unexpanders. Any mismatch → `failure` → default printing. -/
 
-private def posBase? (e : Expr) : Option String :=
-  if      e.isConstOf ``Pos.N    then some "N"
-  else if e.isConstOf ``Pos.V    then some "V"
-  else if e.isConstOf ``Pos.A    then some "A"
-  else if e.isConstOf ``Pos.P    then some "P"
-  else if e.isConstOf ``Pos.Adv  then some "Adv"
-  else if e.isConstOf ``Pos.T    then some "T"
-  else if e.isConstOf ``Pos.D    then some "D"
-  else if e.isConstOf ``Pos.C    then some "C"
-  else if e.isConstOf ``Pos.Conj then some "Conj"
-  else none
-
-private def barSuffix? (e : Expr) : Option String :=
-  if      e.isConstOf ``Bar.two  then some "P"
-  else if e.isConstOf ``Bar.one  then some "′"
-  else if e.isConstOf ``Bar.zero then some "⁰"
-  else none
-
 /-- Display-only notation: `<phrase> ： <target>`. Never parsed from source. -/
 syntax:max (name := uttersDisplay) term:max " ： " str : term
 
@@ -146,12 +128,12 @@ open PrettyPrinter.Delaborator SubExpr in
 def delabUtters : Delab := do
   let e ← getExpr
   guard (e.getAppNumArgs == 3)
-  let some base := posBase? (e.getArg! 1) | failure
-  let some suf  := barSuffix? (e.getArg! 0) | failure
+  let some displayName := xTreeDisplayName? (e.getArg! 0) (e.getArg! 1)
+    | failure
   let str ← match e.getArg! 2 with
     | .lit (.strVal v) => pure v
     | _ => failure
-  let catStx := mkIdent (Name.mkSimple (base ++ suf))
+  let catStx := mkIdent displayName
   let strStx := Syntax.mkStrLit str
   `($catStx ： $strStx)
 
