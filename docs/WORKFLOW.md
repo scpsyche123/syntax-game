@@ -61,13 +61,26 @@ Every side window should end with a short handoff file instead of relying on
 chat history:
 
 - Path format: `docs/HANDOFF-YYYY-MM-DD-topic.md`
-- Include: task, files touched, decisions, tests run, risks, and next step.
+- Include: AI nickname/source, task, files touched, decisions, tests run,
+  risks, and next step.
+- Start each handoff with a short metadata block:
+
+  ```text
+  Agent: <nickname>
+  Role: main window | side window | read-only explorer
+  Date: YYYY-MM-DD
+  ```
+
 - Do not paste raw chat logs unless there is a specific archival reason.
 
 The main window then extracts only durable facts into `CLAUDE.md`: new
 architecture invariants, new landmines, changed deployment facts, or updated
 top-priority tasks. `CLAUDE.md` should stay compact and current, not become a
 chronological log.
+
+When a handoff summarizes work from another AI window whose nickname is
+unknown, record both facts: the summarizing agent's nickname and the source as
+"another AI window, nickname unknown". Do not invent nicknames retroactively.
 
 ## Integration Checklist
 
