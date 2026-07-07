@@ -34,6 +34,8 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 5. 空头 = `head ""`(发音为空的普通词条),不设独立构造子。
 6. 诊断分层靠「不 catch」:外层 elab 预检层级/宣告,内层 `license!` 的
    异常原文上浮,互不吞话。
+7. `Utters` 目标不只核验整句 yield,也会把目标字符串分配给子目标,
+   让玩家看到 `D⁰ ： "my"`、`NP ： "house"` 这类「片段 + 词性」目标。
 
 ## 构建・验证・部署流水线
 
@@ -83,6 +85,10 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
   是词项特征)。债主:LexicalEntry 上的 feature 系统。
 - X′ 出现在宣告位时的报错来自门禁("not available"),措辞不语言学;
   理想归宿是 `checkDeclaredXP` 的 "must be a full phrase"。
+- `Utters` 的子目标字符串分配目前是服务 XBar 五关的启发式:
+  C/T 选补足语时默认空头,D 选 N 时用限定词表判断是否空 D,
+  左/右附接默认一词,TP specifier 默认切在已知谓词前。新增更复杂关卡
+  前需一起审查这些分段规则。
 - i18n 双语(.i18n/en/Game.pot 已生成)、README.md 仍是模板原文。
 - 体验债账本:维护者将以玩家身份重玩记录,分诊后逐条立项。
 

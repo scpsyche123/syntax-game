@@ -88,6 +88,88 @@ tree-building commands — the string check rides along invisibly:
 /-- Level goal: a tree of bar `b`, category `c`, pronouncing `s`. -/
 def Utters (b : Bar) (c : Pos) (s : String) : Type := { t : XTree b c // yield t = s }
 
+private structure UttersGoal where
+  bar : Expr
+  pos : Expr
+  target : String
+
+private def asUtters? (t : Expr) : Option UttersGoal :=
+  let fn := t.getAppFn
+  let args := t.getAppArgs
+  if fn.isConstOf ``Utters && args.size == 3 then
+    match args[2]! with
+    | .lit (.strVal s) => some { bar := args[0]!, pos := args[1]!, target := s }
+    | _ => none
+  else
+    none
+
+private def barTerm? (e : Expr) : Option (TSyntax `term) :=
+  if      e.isConstOf ``Bar.two  then some (mkIdent ``Bar.two)
+  else if e.isConstOf ``Bar.one  then some (mkIdent ``Bar.one)
+  else if e.isConstOf ``Bar.zero then some (mkIdent ``Bar.zero)
+  else none
+
+private def posTerm? (e : Expr) : Option (TSyntax `term) :=
+  if      e.isConstOf ``Pos.N    then some (mkIdent ``Pos.N)
+  else if e.isConstOf ``Pos.V    then some (mkIdent ``Pos.V)
+  else if e.isConstOf ``Pos.A    then some (mkIdent ``Pos.A)
+  else if e.isConstOf ``Pos.P    then some (mkIdent ``Pos.P)
+  else if e.isConstOf ``Pos.Adv  then some (mkIdent ``Pos.Adv)
+  else if e.isConstOf ``Pos.T    then some (mkIdent ``Pos.T)
+  else if e.isConstOf ``Pos.D    then some (mkIdent ``Pos.D)
+  else if e.isConstOf ``Pos.C    then some (mkIdent ``Pos.C)
+  else if e.isConstOf ``Pos.Conj then some (mkIdent ``Pos.Conj)
+  else none
+
+private def words (s : String) : List String :=
+  (s.split (·.isWhitespace)).filter (· != "")
+
+private def joinWords : List String → String
+  | [] => ""
+  | w :: ws => ws.foldl (fun acc x => acc ++ " " ++ x) w
+
+private def splitFirstWord (s : String) : String × String :=
+  match words s with
+  | [] => ("", "")
+  | w :: ws => (w, joinWords ws)
+
+private def splitLastWord (s : String) : String × String :=
+  let ws := words s
+  match ws.reverse with
+  | [] => ("", "")
+  | w :: rest => (joinWords rest.reverse, w)
+
+private def isDeterminer (s : String) : Bool :=
+  ["my", "the", "a", "an", "this", "that", "these", "those"].contains s
+
+private def splitHeadComplementTarget (headPos compPos : Expr) (target : String) : String × String :=
+  if headPos.isConstOf ``Pos.C && compPos.isConstOf ``Pos.T then
+    ("", target)
+  else if headPos.isConstOf ``Pos.T && compPos.isConstOf ``Pos.V then
+    ("", target)
+  else if headPos.isConstOf ``Pos.D && compPos.isConstOf ``Pos.N then
+    let (first, rest) := splitFirstWord target
+    if isDeterminer first then (first, rest) else ("", target)
+  else
+    splitFirstWord target
+
+private def splitLeftAdjunctTarget (target : String) : String × String :=
+  splitFirstWord target
+
+private def splitRightAdjunctTarget (target : String) : String × String :=
+  splitLastWord target
+
+private def splitSpecifierTarget (target : String) : String × String :=
+  let rec go (before after : List String) : String × String :=
+    match after with
+    | [] => splitFirstWord target
+    | w :: rest =>
+      if ["sleep", "sleeps", "see", "sees"].contains w then
+        (joinWords before, joinWords after)
+      else
+        go (before ++ [w]) rest
+  go [] (words target)
+
 /-- INTERNAL. If the main goal is `Utters …`, split it and hide the
     yield-proof, leaving only the tree goal visible. No-op otherwise. -/
 private def enterUtters : TacticM Unit := do
@@ -137,10 +219,129 @@ def delabUtters : Delab := do
   let strStx := Syntax.mkStrLit str
   `($catStx ： $strStx)
 
+private def tryTargetNospec : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.two do
+    throwError "✗ nospec closes off a full phrase (XP); the position here is {← goalType}"
+  let some posStx := posTerm? u.pos | return false
+  let targetStx := Syntax.mkStrLit u.target
+  evalTactic (← `(tactic|
+    refine
+      (fun child : XSyntax.Utters .one $posStx $targetStx =>
+        ⟨XTree.bareX1 child.1, by
+          simpa [XSyntax.Utters, XSyntax.yield] using child.2⟩) ?_))
+  return true
+
+private def tryTargetNocomp : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.one do
+    throwError "✗ nocomp projects a head to bar level (X′); the position here is {← goalType}"
+  let some posStx := posTerm? u.pos | return false
+  let targetStx := Syntax.mkStrLit u.target
+  evalTactic (← `(tactic|
+    refine
+      (fun child : XSyntax.Utters .zero $posStx $targetStx =>
+        ⟨XTree.bareX0 child.1, by
+          simpa [XSyntax.Utters, XSyntax.yield] using child.2⟩) ?_))
+  return true
+
+private def tryTargetHead (w : TSyntax `str) : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.zero do
+    throwError "✗ a bare head cannot stand at {← goalType} — project it first (nocomp / nospec)"
+  let word := w.getString
+  if word != u.target then
+    throwError "✗ 这个位置要念作 \"{u.target}\",不能种 \"{word}\""
+  evalTactic (← `(tactic| exact ⟨XTree.word ⟨$w⟩, rfl⟩))
+  return true
+
+private def declaredXPPos (stx : Term) (who : String) : TacticM Expr := do
+  let d ← elabTerm stx none
+  match asXTree? d with
+  | some (b, pos) =>
+    unless b.isConstOf ``Bar.two do
+      throwError "✗ {who} must be a full phrase (XP); you declared {d}"
+    return pos
+  | none =>
+    throwError "✗ {who} must be a syntactic position (an XP); you declared {d}"
+
+private def tryTargetComplement (t : Term) : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.one do
+    throwError "✗ a complement merges at the bar level (X′); the position here is {← goalType}"
+  let compPos ← declaredXPPos t "a complement"
+  let some headPosStx := posTerm? u.pos | return false
+  let some compPosStx := posTerm? compPos | return false
+  let (headTarget, compTarget) := splitHeadComplementTarget u.pos compPos u.target
+  let headTargetStx := Syntax.mkStrLit headTarget
+  let compTargetStx := Syntax.mkStrLit compTarget
+  evalTactic (← `(tactic|
+    refine
+      (fun head : XSyntax.Utters .zero $headPosStx $headTargetStx =>
+       fun comp : XSyntax.Utters .two $compPosStx $compTargetStx =>
+        ⟨XTree.compl head.1 comp.1 (by license!), by
+          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, head.2, comp.2]⟩) ?_ ?_))
+  return true
+
+private def tryTargetAdjoinL (t : Term) : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.one do
+    throwError "✗ an adjunct merges at the bar level (X′); the position here is {← goalType}"
+  let adjPos ← declaredXPPos t "an adjunct"
+  let some parentPosStx := posTerm? u.pos | return false
+  let some adjPosStx := posTerm? adjPos | return false
+  let (adjTarget, restTarget) := splitLeftAdjunctTarget u.target
+  let adjTargetStx := Syntax.mkStrLit adjTarget
+  let restTargetStx := Syntax.mkStrLit restTarget
+  evalTactic (← `(tactic|
+    refine
+      (fun adj : XSyntax.Utters .two $adjPosStx $adjTargetStx =>
+       fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
+        ⟨XTree.adjunctL adj.1 rest.1, by
+          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, adj.2, rest.2]⟩) ?_ ?_))
+  return true
+
+private def tryTargetAdjoinR (t : Term) : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.one do
+    throwError "✗ an adjunct merges at the bar level (X′); the position here is {← goalType}"
+  let adjPos ← declaredXPPos t "an adjunct"
+  let some parentPosStx := posTerm? u.pos | return false
+  let some adjPosStx := posTerm? adjPos | return false
+  let (restTarget, adjTarget) := splitRightAdjunctTarget u.target
+  let restTargetStx := Syntax.mkStrLit restTarget
+  let adjTargetStx := Syntax.mkStrLit adjTarget
+  evalTactic (← `(tactic|
+    refine
+      (fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
+       fun adj : XSyntax.Utters .two $adjPosStx $adjTargetStx =>
+        ⟨XTree.adjunctR rest.1 adj.1, by
+          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, rest.2, adj.2]⟩) ?_ ?_))
+  return true
+
+private def tryTargetSpecifier (t : Term) : TacticM Bool := do
+  let some u := asUtters? (← goalType) | return false
+  unless u.bar.isConstOf ``Bar.two do
+    throwError "✗ a specifier merges at the phrase level (XP); the position here is {← goalType}"
+  let specPos ← declaredXPPos t "a specifier"
+  let some parentPosStx := posTerm? u.pos | return false
+  let some specPosStx := posTerm? specPos | return false
+  let (specTarget, restTarget) := splitSpecifierTarget u.target
+  let specTargetStx := Syntax.mkStrLit specTarget
+  let restTargetStx := Syntax.mkStrLit restTarget
+  evalTactic (← `(tactic|
+    refine
+      (fun spec : XSyntax.Utters .two $specPosStx $specTargetStx =>
+       fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
+        ⟨XTree.Spec spec.1 rest.1, by
+          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, spec.2, rest.2]⟩) ?_ ?_))
+  return true
+
 /-! ### Player vocabulary -/
 
 /-- `XP → X′` (no specifier). Vacuous top projection, made explicit. -/
 elab "nospec" : tactic => do
+  if ← tryTargetNospec then return
   enterUtters
   let t ← goalType
   match asXTree? t with
@@ -154,6 +355,7 @@ elab "nospec" : tactic => do
 
 /-- `X′ → X⁰` (no complement). Vacuous bar projection, made explicit. -/
 elab "nocomp" : tactic => do
+  if ← tryTargetNocomp then return
   enterUtters
   let t ← goalType
   match asXTree? t with
@@ -167,10 +369,11 @@ elab "nocomp" : tactic => do
 
 /-- Plant a word (or `""` for a null head) at an `X⁰` goal. -/
 elab "head" w:str : tactic => do
-  enterUtters
   let word := w.getString
   if word != "" && hasWhitespace word then
     throwError "✗ head 一次只能种一个词；多个词必须各自占一个 head，空头才写 `head \"\"`"
+  if ← tryTargetHead w then return
+  enterUtters
   let t ← goalType
   match asXTree? t with
   | some (b, _) =>
@@ -183,6 +386,7 @@ elab "head" w:str : tactic => do
 
 /-- `XP → Spec X′`. Usage: `specifier DP` — declare the specifier. -/
 elab "specifier" t:term : tactic => do
+  if ← tryTargetSpecifier t then return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -199,6 +403,7 @@ elab "specifier" t:term : tactic => do
     Selection is checked here, at the moment of combination: an unlicensed
     pair makes this very command fail, in the licensing layer's own words. -/
 elab "complement" t:term : tactic => do
+  if ← tryTargetComplement t then return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -213,6 +418,7 @@ elab "complement" t:term : tactic => do
 
 /-- `X′ → Adjunct X′` (left adjunction). Usage: `adjoinL AP`. -/
 elab "adjoinL" t:term : tactic => do
+  if ← tryTargetAdjoinL t then return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -227,6 +433,7 @@ elab "adjoinL" t:term : tactic => do
 
 /-- `X′ → X′ Adjunct` (right adjunction). Usage: `adjoinR AdvP`. -/
 elab "adjoinR" t:term : tactic => do
+  if ← tryTargetAdjoinR t then return
   enterUtters
   let g ← goalType
   match asXTree? g with
