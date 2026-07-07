@@ -28,6 +28,10 @@ TacticDoc adjoinR
 /-- `specifier XP` —— 规则 XP → Spec + X′:宣告这个短语带一个什么范畴的 specifier。 -/
 TacticDoc specifier
 
+/-- `cannotSelect` —— 在「¬ Selects c d」目标上证明这样的许可证不存在:穷尽
+    选择表的构造子,没有一个匹配就直接判定。如果这对组合其实合法,会被拒绝。 -/
+TacticDoc cannotSelect
+
 /-! Definition docs: the phrase-type vocabulary players use in declarations.
 
 Registered under `*Def`-suffixed keys, NOT the bare `NP`/`VP`/… tokens. Reason:
