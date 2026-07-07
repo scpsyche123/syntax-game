@@ -14,7 +14,7 @@ Introduction "
 "
 
 /-- 为词 *ideas* 建一个名词中心语 N⁰。 -/
-Statement : N⁰ := by
+Statement : XSyntax.Utters .zero .N "ideas" := by
   Hint "输入 `head \"ideas\"`(引号是指令的一部分)。"
   head "ideas"
 

@@ -17,7 +17,7 @@ Introduction "
 "
 
 /-- 为 *my big house* 建一个 DP。 -/
-Statement : DP := by
+Statement : XSyntax.Utters .two .D "my big house" := by
   nospec
   complement NP
   head "my"

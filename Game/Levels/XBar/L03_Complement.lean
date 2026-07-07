@@ -19,7 +19,7 @@ Introduction "
 "
 
 /-- 为 *my house* 建一个 DP。 -/
-Statement : DP := by
+Statement : XSyntax.Utters .two .D "my house" := by
   Hint "老规矩,`nospec` 开顶。"
   nospec
   Hint "现在在 `D′`。想试非法搭配就是此刻:`complement VP`。正路是 `complement NP`。"

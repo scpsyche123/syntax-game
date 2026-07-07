@@ -21,7 +21,7 @@ Introduction "
 "
 
 /-- 为 *Colorless green ideas sleep furiously* 建一棵完整的 CP。 -/
-Statement : CP := by
+Statement : XSyntax.Utters .two .C "Colorless green ideas sleep furiously" := by
   Hint "最外层是 CP:`nospec`,然后 C 选择什么?"
   nospec
   complement TP

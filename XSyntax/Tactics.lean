@@ -25,7 +25,7 @@ construction side — a design decision, pending.
 import Lean
 import XSyntax.TypeNotation
 
-open Lean Elab Tactic
+open Lean Elab Tactic Meta
 
 namespace XSyntax
 
@@ -70,10 +70,93 @@ elab "license!" : tactic => do
   else
     throwError "license!: not a selection goal"
 
+/-! ### Yield-checked level goals
+
+A level's goal is `Utters b c s`: build a tree of bar `b`, category `c`, that
+pronounces the target string `s`. The player still types ONLY the seven
+tree-building commands — the string check rides along invisibly:
+
+* `enterUtters`, run at the START of every command, cracks an `Utters` goal
+  into `⟨tree, proof⟩` and PARKS the `yield t = s` proof off the visible goal
+  list. So the panel shows one clean linguistic goal, never a bare equation.
+* `closeUtters`, run at the END of every command, watches the parked proof.
+  While the tree is unfinished its type still carries metavariables → nothing
+  happens. The instant the tree is complete it discharges the proof if the
+  yield matches, or REFUSES in linguistics if the tree pronounces something
+  else. A wrong word therefore cannot pass — it is caught at the final move. -/
+
+/-- Level goal: a tree of bar `b`, category `c`, pronouncing `s`. -/
+def Utters (b : Bar) (c : Pos) (s : String) : Type := { t : XTree b c // yield t = s }
+
+/-- INTERNAL. If the main goal is `Utters …`, split it and hide the
+    yield-proof, leaving only the tree goal visible. No-op otherwise. -/
+private def enterUtters : TacticM Unit := do
+  let ty ← goalType
+  if ty.getAppFn.isConstOf ``Utters then
+    evalTactic (← `(tactic| refine ⟨?_, ?_⟩))
+    match ← getGoals with
+    | treeG :: _prf :: rest => setGoals (treeG :: rest)
+    | _ => pure ()
+
+/-- INTERNAL. Once the tree is complete, discharge the parked `yield t = s`;
+    if the tree pronounces something other than the target, refuse by name. -/
+private def closeUtters : TacticM Unit := do
+  for (mvarId, decl) in (← getMCtx).decls.toList do
+    unless (← mvarId.isAssigned) do
+      let dty ← instantiateMVars decl.type
+      let args := dty.getAppArgs
+      if dty.isAppOf ``Eq && args.size == 3 && args[1]!.getAppFn.isConstOf ``yield then
+        unless dty.hasExprMVar do
+          try
+            mvarId.refl
+          catch _ =>
+            let said ← unsafe Meta.evalExpr String (.const ``String []) args[1]!
+            throwError "✗ 这棵树念作 \"{said}\",不是目标 {args[2]!}"
+
+/-! Display an `Utters` goal as e.g. `DP：my house`. Expression-level constant
+    checks (`isConstOf`) — immune to the notation-rewriting pitfall that breaks
+    pattern-based unexpanders. Any mismatch → `failure` → default printing. -/
+
+private def posBase? (e : Expr) : Option String :=
+  if      e.isConstOf ``Pos.N    then some "N"
+  else if e.isConstOf ``Pos.V    then some "V"
+  else if e.isConstOf ``Pos.A    then some "A"
+  else if e.isConstOf ``Pos.P    then some "P"
+  else if e.isConstOf ``Pos.Adv  then some "Adv"
+  else if e.isConstOf ``Pos.T    then some "T"
+  else if e.isConstOf ``Pos.D    then some "D"
+  else if e.isConstOf ``Pos.C    then some "C"
+  else if e.isConstOf ``Pos.Conj then some "Conj"
+  else none
+
+private def barSuffix? (e : Expr) : Option String :=
+  if      e.isConstOf ``Bar.two  then some "P"
+  else if e.isConstOf ``Bar.one  then some "′"
+  else if e.isConstOf ``Bar.zero then some "⁰"
+  else none
+
+/-- Display-only notation: `<phrase> ： <target>`. Never parsed from source. -/
+syntax:max (name := uttersDisplay) term:max " ： " str : term
+
+open PrettyPrinter.Delaborator SubExpr in
+@[delab app.XSyntax.Utters]
+def delabUtters : Delab := do
+  let e ← getExpr
+  guard (e.getAppNumArgs == 3)
+  let some base := posBase? (e.getArg! 1) | failure
+  let some suf  := barSuffix? (e.getArg! 0) | failure
+  let str ← match e.getArg! 2 with
+    | .lit (.strVal v) => pure v
+    | _ => failure
+  let catStx := mkIdent (Name.mkSimple (base ++ suf))
+  let strStx := Syntax.mkStrLit str
+  `($catStx ： $strStx)
+
 /-! ### Player vocabulary -/
 
 /-- `XP → X′` (no specifier). Vacuous top projection, made explicit. -/
 elab "nospec" : tactic => do
+  enterUtters
   let t ← goalType
   match asXTree? t with
   | some (b, _) =>
@@ -82,9 +165,11 @@ elab "nospec" : tactic => do
     else
       throwError "✗ nospec closes off a full phrase (XP); the position here is {t}"
   | none => throwError "nospec: the goal is not a syntactic position"
+  closeUtters
 
 /-- `X′ → X⁰` (no complement). Vacuous bar projection, made explicit. -/
 elab "nocomp" : tactic => do
+  enterUtters
   let t ← goalType
   match asXTree? t with
   | some (b, _) =>
@@ -93,9 +178,11 @@ elab "nocomp" : tactic => do
     else
       throwError "✗ nocomp projects a head to bar level (X′); the position here is {t}"
   | none => throwError "nocomp: the goal is not a syntactic position"
+  closeUtters
 
 /-- Plant a word (or `""` for a null head) at an `X⁰` goal. -/
 elab "head" w:str : tactic => do
+  enterUtters
   let t ← goalType
   match asXTree? t with
   | some (b, _) =>
@@ -104,9 +191,11 @@ elab "head" w:str : tactic => do
     else
       throwError "✗ a bare head cannot stand at {t} — project it first (nocomp / nospec)"
   | none => throwError "head: the goal is not a syntactic position"
+  closeUtters
 
 /-- `XP → Spec X′`. Usage: `specifier DP` — declare the specifier. -/
 elab "specifier" t:term : tactic => do
+  enterUtters
   let g ← goalType
   match asXTree? g with
   | some (b, _) =>
@@ -116,11 +205,13 @@ elab "specifier" t:term : tactic => do
     else
       throwError "✗ a specifier merges at the phrase level (XP); the position here is {g}"
   | none => throwError "specifier: the goal is not a syntactic position"
+  closeUtters
 
 /-- `X′ → X⁰ Compl`. Usage: `complement NP` — declare the complement.
     Selection is checked here, at the moment of combination: an unlicensed
     pair makes this very command fail, in the licensing layer's own words. -/
 elab "complement" t:term : tactic => do
+  enterUtters
   let g ← goalType
   match asXTree? g with
   | some (b, _) =>
@@ -130,9 +221,11 @@ elab "complement" t:term : tactic => do
     else
       throwError "✗ a complement merges at the bar level (X′); the position here is {g}"
   | none => throwError "complement: the goal is not a syntactic position"
+  closeUtters
 
 /-- `X′ → Adjunct X′` (left adjunction). Usage: `adjoinL AP`. -/
 elab "adjoinL" t:term : tactic => do
+  enterUtters
   let g ← goalType
   match asXTree? g with
   | some (b, _) =>
@@ -142,9 +235,11 @@ elab "adjoinL" t:term : tactic => do
     else
       throwError "✗ an adjunct merges at the bar level (X′); the position here is {g}"
   | none => throwError "adjoinL: the goal is not a syntactic position"
+  closeUtters
 
 /-- `X′ → X′ Adjunct` (right adjunction). Usage: `adjoinR AdvP`. -/
 elab "adjoinR" t:term : tactic => do
+  enterUtters
   let g ← goalType
   match asXTree? g with
   | some (b, _) =>
@@ -154,5 +249,6 @@ elab "adjoinR" t:term : tactic => do
     else
       throwError "✗ an adjunct merges at the bar level (X′); the position here is {g}"
   | none => throwError "adjoinR: the goal is not a syntactic position"
+  closeUtters
 
 end XSyntax
