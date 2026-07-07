@@ -142,11 +142,25 @@ private def splitLastWord (s : String) : String × String :=
 private def isDeterminer (s : String) : Bool :=
   ["my", "the", "a", "an", "this", "that", "these", "those"].contains s
 
+/-- Known modal/auxiliary spellings of an overt T. Anything else at a T-selects-V
+    complement defaults to a null head, matching the game's earlier (silent-T)
+    levels. -/
+private def isModal (s : String) : Bool :=
+  ["will", "can", "may", "must", "shall", "would", "could", "might", "should",
+   "did", "does"].contains s
+
+/-- Words that mark where a specifier (subject) ends and the rest of the clause
+    begins: either a known predicate verb, or an overt T/modal — both signal
+    "the clause proper starts here". -/
+private def isClauseBoundaryWord (s : String) : Bool :=
+  isModal s || ["sleep", "sleeps", "see", "sees"].contains s
+
 private def splitHeadComplementTarget (headPos compPos : Expr) (target : String) : String × String :=
   if headPos.isConstOf ``Pos.C && compPos.isConstOf ``Pos.T then
     ("", target)
   else if headPos.isConstOf ``Pos.T && compPos.isConstOf ``Pos.V then
-    ("", target)
+    let (first, rest) := splitFirstWord target
+    if isModal first then (first, rest) else ("", target)
   else if headPos.isConstOf ``Pos.D && compPos.isConstOf ``Pos.N then
     let (first, rest) := splitFirstWord target
     if isDeterminer first then (first, rest) else ("", target)
@@ -164,7 +178,7 @@ private def splitSpecifierTarget (target : String) : String × String :=
     match after with
     | [] => splitFirstWord target
     | w :: rest =>
-      if ["sleep", "sleeps", "see", "sees"].contains w then
+      if isClauseBoundaryWord w then
         (joinWords before, joinWords after)
       else
         go (before ++ [w]) rest
@@ -445,5 +459,40 @@ elab "adjoinR" t:term : tactic => do
       throwError "✗ an adjunct merges at the bar level (X′); the position here is {g}"
   | none => throwError "adjoinR: the goal is not a syntactic position"
   closeUtters
+
+/-- INTERNAL. Mirrors the licensing table in `Tree.lean` by hand: `Selects`
+    has exactly five constructors, so checking membership here — BEFORE
+    running `cases` — lets `cannotSelect` refuse in linguistics on an
+    actually-licensed pair instead of leaking Lean's generic "unsolved
+    goals" (which is what happens if `cases` is run first: it succeeds and
+    produces a real, un-closed goal rather than throwing). -/
+private def isLicensedPair (c d : Expr) : Bool :=
+  (c.isConstOf ``Pos.D && d.isConstOf ``Pos.N) ||
+  (c.isConstOf ``Pos.T && d.isConstOf ``Pos.V) ||
+  (c.isConstOf ``Pos.C && d.isConstOf ``Pos.T) ||
+  (c.isConstOf ``Pos.P && d.isConstOf ``Pos.D) ||
+  (c.isConstOf ``Pos.V && d.isConstOf ``Pos.D)
+
+/-- Eighth player command, added deliberately: prove a specific head-complement
+    pairing has NO license, on a goal of the form `¬ Selects c d`. Mechanism
+    mirrors `license!`: exhaust `Selects`'s constructors — none match an
+    unlicensed pair, so the case split closes the goal vacuously. If the pair
+    is actually licensed, refuse in the same linguistic register as every
+    other command, naming the two categories. -/
+elab "cannotSelect" : tactic => do
+  let t ← goalType
+  if t.getAppFn.isConstOf ``Not && t.getAppArgs.size == 1 then
+    let selectsTy := t.getAppArgs[0]!
+    let fn := selectsTy.getAppFn
+    let args := selectsTy.getAppArgs
+    if fn.isConstOf ``Selects && args.size == 2 then
+      if isLicensedPair args[0]! args[1]! then
+        throwError "✗ {args[0]!} 确实选择 {args[1]!}——这个组合合法,证明不了它不存在"
+      else
+        evalTactic (← `(tactic| intro h; cases h))
+    else
+      throwError "cannotSelect: 目标不是一个「¬ Selects _ _」形式的否定许可命题"
+  else
+    throwError "cannotSelect: 目标不是一个否定命题"
 
 end XSyntax

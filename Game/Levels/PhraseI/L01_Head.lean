@@ -1,6 +1,6 @@
 import Game.Metadata
 
-World "XBar"
+World "Phrase I"
 Level 1
 
 Title "词与中心语"

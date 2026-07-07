@@ -1,4 +1,5 @@
-import Game.Levels.XBar
+import Game.Levels.PhraseI
+import Game.Levels.PhraseII
 
 -- Game metadata
 
