@@ -69,6 +69,14 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
    由 relay 直接驱动);Windows 本地起 lean4game 前端会因 `/bin/bash` 崩溃,
    本地开发只用 VS Code + Playground,联网体验用公网部署版。
 6. LF/CRLF warning 是 Windows 例行噪音,无视。
+7. **World 名(`World "…"`)必须无空格**。它不是显示串,而是标识符,会进
+   URL / websocket 路径 / 服务器文件路径。带空格(曾命名 `"Phrase I"`)会让
+   线上交互服务器 404、目标永远 loading 转圈。显示名放 `Title`,World id 用
+   无空格 CamelCase(`PhraseI`)。
+8. **静态验证 ≠ 交互可玩**:`lake build`、CI、`game.json` 只证明静态数据正确;
+   目标面板加载、指令执行、报错渲染这些**交互对局**行为,只有真人在公网部署版
+   里玩才能验(Windows 本地起不了前端,见地雷 5)。改动关卡/tactic/delaborator
+   后,务必提示维护者实机试玩,别把"CI 绿"当成"能玩"。
 
 ## 当前头号任务:无(上一个已完成)
 
