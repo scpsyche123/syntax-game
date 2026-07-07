@@ -115,9 +115,24 @@ theorem colorless_is_grammatical :
     ∃ t : CP, yield t = "Colorless green ideas sleep furiously" :=
   ⟨colorless_tree, rfl⟩
 
-/-! ## Regression pins -/
+/-! ## Regression pins · one solution per level, yield checked against the
+    level's target sentence.
 
-#guard yield my_big_house == "my big house"
-#guard yield colorless_tree == "Colorless green ideas sleep furiously"
+    L04 (`my_big_house`) and L05 (`colorless_tree`) are the defs built in the
+    scenes above; L01–L03 get their own solution defs here so all five level
+    targets are pinned in one place. These do NOT constrain players — a player
+    may still build any well-formed phrase (grammaticality = a tree exists).
+    They guard OUR intended solutions against silent drift: change a level's
+    tactics and break its target string, and the build fails here. -/
+
+def l01_head : N⁰ := by head "ideas"
+def l02_np   : NP := by nospec; nocomp; head "ideas"
+def l03_dp   : DP := by nospec; complement NP; head "my"; nospec; nocomp; head "house"
+
+#guard yield l01_head       == "ideas"                                    -- L01
+#guard yield l02_np         == "ideas"                                    -- L02
+#guard yield l03_dp         == "my house"                                 -- L03
+#guard yield my_big_house   == "my big house"                             -- L04
+#guard yield colorless_tree == "Colorless green ideas sleep furiously"    -- L05
 
 end XSyntax
