@@ -59,26 +59,21 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
    gamedata 不生成、云端部署 404(已发生过一次)。
 3. **notation 的反美化器失效**:Group 2 记法先把 `Pos.D` 改写成 `D`,
    导致 Group 1 的语法层模式(期待原始 `Pos.D`)匹配失败,目标面板
-   显示裸类型 `XSyntax.XTree XSyntax.Bar.one D`。修复方案见「当前头号任务」。
+   显示裸类型 `XSyntax.XTree XSyntax.Bar.one D`。已修复,见
+   `XSyntax/Display.lean`(表达式层 `@[delab app.XSyntax.XTree]`,
+   `isConstOf` 检查免疫此地雷)。
 4. `.history/` 是 VS Code 插件的本地快照,已加 .gitignore,勿入库。
 5. GameServer 包无独立可执行文件(文档中的 gameserver exe 描述已过时,
    由 relay 直接驱动);Windows 本地起 lean4game 前端会因 `/bin/bash` 崩溃,
    本地开发只用 VS Code + Playground,联网体验用公网部署版。
 6. LF/CRLF warning 是 Windows 例行噪音,无视。
 
-## 当前头号任务:Display.lean(print 侧翻译层)
+## 当前头号任务:无(上一个已完成)
 
-新建 `XSyntax/Display.lean`:一个 `@[app_delab XTree]` delaborator,
-在**表达式层**检查两个索引是否为具体常量(`Bar.two`+`Pos.N` → 产出 `` `(NP) ``,
-共 3×9=27 个分支;任一索引非常量则 `failure` 回退默认打印)。
-表达式层检查(`isConstOf`)免疫地雷 3 的语法改写问题。
-- `Tactics.lean` 改为 `import XSyntax.Display`(链式带上 TypeNotation)。
-- 根文件 `XSyntax.lean` 在 TypeNotation 之后加 `import XSyntax.Display`。
-- 若 `@[app_delab XTree]` 报 unknown attribute(v4.23),换写
-  `@[delab app.XSyntax.XTree]`。
-- 本地验收:build 后打开 Playground.lean,infoview 目标应显示 `D′` 等
-  语言学记法;错误信息里的插值 `{t}` 同步受益。
-- 云端验收:部署后游戏目标面板显示 `DP`/`D′`/`Selects D N`。
+`Display.lean`(print 侧翻译层)已落地并验证:`XSyntax/Display.lean` 提供
+`@[delab app.XSyntax.XTree]`,表达式层检查两个索引(`isConstOf`),
+免疫地雷 3。`Tactics.lean` 的 `Utters` 目标(见下方)复用同一套映射显示。
+下一项头号任务待维护者从「挂账中的债务」里挑选后在此更新。
 
 ## 挂账中的债务(未排期,动工前先与维护者讨论)
 
@@ -99,6 +94,12 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 - 改动玩家可见文本(关卡 Introduction/Hint/错误信息)属于教学设计,
   先提案再改;纯工程改动可先做后讲。
 - commit message 用英文,风格:`fix:`/`feat:`/`chore:` 前缀。
+- **多 AI/多窗口并行工作**:完整流程见 `docs/WORKFLOW.md`。核心规则——
+  按「文件所有权」而非「主题」划分并行单位(教学设计和技术修复常常
+  碰同一批关卡文件,不能假设主题不重叠就能并行);只有一个主窗口
+  负责最终 `git status`/`lake build`/commit/push/看 CI,其余窗口不
+  直接 push;每个窗口收尾写 `docs/HANDOFF-*.md`,只有长期有效的事实
+  才提炼进本文件。
 
 ## 会话交接记录
 
