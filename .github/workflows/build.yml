@@ -11,6 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: stamp build version into Info panel
+        run: |
+          sha=$(git rev-parse --short HEAD)
+          ts=$(date -u +"%Y-%m-%d %H:%M UTC")
+          sed -i "s/{{BUILD_VERSION}}/${sha} · ${ts}/" Game.lean
+
       - uses: leanprover/lean-action@v1
         with:
           use-github-cache: false
