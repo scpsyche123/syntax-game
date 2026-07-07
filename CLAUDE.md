@@ -93,10 +93,25 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
   是词项特征)。债主:LexicalEntry 上的 feature 系统。
 - X′ 出现在宣告位时的报错来自门禁("not available"),措辞不语言学;
   理想归宿是 `checkDeclaredXP` 的 "must be a full phrase"。
-- `Utters` 的子目标字符串分配目前是服务 XBar 五关的启发式:
-  C/T 选补足语时默认空头,D 选 N 时用限定词表判断是否空 D,
-  左/右附接默认一词,TP specifier 默认切在已知谓词前。新增更复杂关卡
-  前需一起审查这些分段规则。
+- **切分的"承诺驱动"重构(思想已验证,实现待重做)**:目标面板给子目标
+  预分配字符串是**剧透**——玩家该自己判断"my house"里哪部分是 D⁰、哪部分
+  是 NP,不该被系统提前切好告诉他。旧实现更靠一套启发式(限定词表、谓词表
+  `sleep/sees`、左右附接默认一词……),既剧透又只服务五关。
+  已验证的替代思想:切分处子目标**开成未定目标**,不预算边界(面板显示裸
+  `D⁰`/`NP`);玩家一旦种下参照子树(如 `head "my"`),才把"整串减去该子树
+  yield"的**残量**赋给兄弟目标(→ `NP ： "house"`),错误作为后果在整句
+  念不对时暴露,而非当场剧透。
+  **关键实现洞见**(值钱的部分,重做时照搬):减法只在 tactic 的**编译 meta
+  代码**里算、结果赋给普通元变量,**绝不进类型索引**——否则内核要归约
+  `String.take`/`drop`,而字符串字面量在内核里对这些操作不归约(会卡死)。
+  整句 yield 证明用 `mkEqRefl` 交**内核**验,别用 elaborator 的 `isDefEq`/
+  `refl`(整句会炸;逐节 `simp` 之所以行是因为它只碰小片段)。
+  另有几个 Lean 元编程地雷(`?_` 被后续 binder 捕获、tag 带 hygiene 需
+  `eraseMacroScopes`、`Subtype.val ⟨tree, ?prf⟩` 让 `hasExprMVar` 误判、
+  需按 mvar 类型 Prop/Type 判断树是否搭完)见
+  `docs/HANDOFF-2026-07-07-commitment-segmentation.md`。
+  注意:该 handoff 附带的 `agent/xiaolan` 分支实现(基于旧关卡结构)**已随
+  结构改动过期**,重做时以本条思想为准、勿直接合并那份代码。
 - i18n 双语(.i18n/en/Game.pot 已生成)、README.md 仍是模板原文。
 - 体验债账本:维护者将以玩家身份重玩记录,分诊后逐条立项。
 
