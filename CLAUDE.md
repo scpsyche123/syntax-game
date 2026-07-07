@@ -99,3 +99,8 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 - 改动玩家可见文本(关卡 Introduction/Hint/错误信息)属于教学设计,
   先提案再改;纯工程改动可先做后讲。
 - commit message 用英文,风格:`fix:`/`feat:`/`chore:` 前缀。
+
+## 会话交接记录
+
+- `docs/HANDOFF-2026-07-07.md` 汇总了 2026-07-07 的跨窗口工作记录:
+  已落地修复、教学设计诊断、部署自动化、definitions 面板事故、以及剩余债务。
