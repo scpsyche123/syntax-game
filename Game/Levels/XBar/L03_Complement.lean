@@ -40,3 +40,8 @@ Conclusion "
 "
 
 NewTactic complement
+NewDefinition «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
+
+-- 若 lake build 后 "No world introducing …" warning 仍在(即 NewDefinition
+-- 喂不饱 tactic 门禁),取消下面这行的注释,双轨并行:
+-- NewHiddenTactic «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
