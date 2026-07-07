@@ -95,8 +95,9 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
   先提案再改;纯工程改动可先做后讲。
 - commit message 用英文,风格:`fix:`/`feat:`/`chore:` 前缀。
 - **AI 昵称记录**:每个 AI/窗口在工作记录(`docs/HANDOFF-*.md`)里必须写
-  自己的昵称和来源。当前 Codex 窗口昵称是**小绿**。未知来源不要补编昵称,
-  写"another AI window, nickname unknown"即可。
+  自己的昵称和来源。当前登记在案:Codex 窗口昵称**小绿**,Claude Code
+  窗口昵称**小红**。未知来源不要补编昵称,写"another AI window, nickname
+  unknown"即可。
 - **多 AI/多窗口并行工作**:完整流程见 `docs/WORKFLOW.md`。核心规则——
   按「文件所有权」而非「主题」划分并行单位(教学设计和技术修复常常
   碰同一批关卡文件,不能假设主题不重叠就能并行);只有一个主窗口
