@@ -86,4 +86,5 @@ package Game where
     ⟨`trace.debug, true⟩]
 
 @[default_target]
+lean_lib XSyntax
 lean_lib Game

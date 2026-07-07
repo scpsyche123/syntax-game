@@ -1,28 +1,22 @@
-import Game.Levels.DemoWorld
+import Game.Levels.XBar
 
--- Here's what we'll put on the title screen
-Title "Hello World Game"
-Introduction
-"
-This text appears on the starting page where one selects the world/level to play.
-You can use **markdown**.
+-- Game metadata
+
+Title "Syntax Game · 句法游戏"
+Introduction "
+欢迎来到句法游戏。
+
+在这里,你将扮演一台句法引擎:用 X-bar 理论的规则,亲手把词搭成短语、把短语搭成句子。
+每一步都是一条真实的句法规则;每一个错误都会被系统用语言学的语言拒绝。
+
+这个游戏运行在 Lean 4 定理证明器上——你搭出的每一棵树,都是被机器验证过的形式对象。
 "
 
 Info "
-Here you can put additional information about the game. It is accessible
-from the starting through the drop-down menu.
+本游戏是一个用 Lean 4 形式化生成句法的研究项目的教学演示。
 
-For example: Game version, Credits, Link to Github and Zulip, etc.
-
-Use **markdown**.
+树的良构性由类型系统保证(Church 式:不合法的结构不可表达),
+中心语选择由许可关系 `Selects` 保证(不合法的选择没有证据)。
 "
 
-/-! Information to be displayed on the servers landing page. -/
-Languages "en"
-CaptionShort "Game Template"
-CaptionLong "You should use this game as a template for your own game and add your own levels."
--- Prerequisites "" -- add this if your game depends on other games
--- CoverImage "images/cover.png"
-
-/-! Build the game. Show's warnings if it found a problem with your game. -/
 MakeGame

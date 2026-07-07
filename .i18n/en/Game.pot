@@ -1,80 +1,332 @@
 msgid ""
 msgstr "Project-Id-Version: Game v4.23.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-23\n"
+"POT-Creation-Date: 2026-07-07\n"
 "Last-Translator: \n"
 "Language-Team: none\n"
 "Language: en\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit"
 
-#: GameServer.RpcHandlers
-msgid "level completed with warnings… 🎭"
+#. §0: `complement XP`
+#. §1: `complement`
+#. §2: `D′`
+#. §3: `complement VP`
+#. §4: `complement NP`
+#: Game.Levels.XBar.L03_Complement
+msgid "目标:*my house*,一个 DP——限定词 *my* 作中心语,带一个 NP 补足语。\n"
+"\n"
+"新规则 §0:在 X′ 目标上,宣告中心语要选择一个什么范畴的补足语。\n"
+"它会同时开出两个子目标:中心语本身,和你宣告的补足语。\n"
+"\n"
+"但**选择不是自由的**:D 选择 NP,不选择 VP——这是词库知识,叫选择限制\n"
+"(c-selection)。系统在你敲下 §1 的那一刻当场检查。\n"
+"\n"
+"先做个实验:走到 §2 之后,故意输入 §3,读一读系统怎么说。\n"
+"然后再用 §4 走正路。"
 msgstr ""
 
-#: Game.Levels.DemoWorld.L01_HelloWorld
-msgid "Hello World"
+#: Game.Levels.XBar
+msgid "X-bar 理论主张:一切短语共享同一套三层几何——\n"
+"\n"
+"- **X⁰**(中心语):词所站的位置\n"
+"- **X′**(bar 层):中心语与它的补足语、附加语结合的层\n"
+"- **XP**(短语层):specifier 封顶之处\n"
+"\n"
+"这个世界的五关,会让你从一个词开始,一路搭到 Chomsky 那句著名的\n"
+"*Colorless green ideas sleep furiously*。"
 msgstr ""
 
-#: Game
-msgid "This text appears on the starting page where one selects the world/level to play.\n"
-"You can use **markdown**."
-msgstr ""
-
-#: GameServer.RpcHandlers
-msgid "level completed! 🎉"
-msgstr ""
-
-#: Game
-msgid "Hello World Game"
-msgstr ""
-
-#. §0: `«{g}»`
-#: Game.Levels.DemoWorld.L01_HelloWorld
-msgid "You should use §0 now."
+#: Game.Levels.XBar.L02_Projection
+msgid "空洞投射:从词到短语"
 msgstr ""
 
 #: GameServer.RpcHandlers
 msgid "intermediate goal solved! 🎉"
 msgstr ""
 
-#: Game
-msgid "You should use this game as a template for your own game and add your own levels."
+#. §0: `nospec`
+#: Game.Metadata
+msgid "§0 —— 规则 XP → X′:这个短语没有 specifier,由 X′ 直接封顶。\n"
+"    空洞投射的上半层。"
 msgstr ""
 
-#: Game
-msgid "Here you can put additional information about the game. It is accessible\n"
-"from the starting through the drop-down menu.\n"
+#: Game.Levels.XBar.L05_Colorless
+msgid "🎉 这棵树存在——所以这句话合语法。\n"
 "\n"
-"For example: Game version, Credits, Link to Github and Zulip, etc.\n"
+"这就是整个项目的论点浓缩成一关:**合语法性 = 存在一棵树**。\n"
+"你刚才不是画了一张图,而是构造了一个被类型系统全程审查过的证据。\n"
 "\n"
-"Use **markdown**."
+"(顺带:你全程没有写一行 Lean——七条指令全部是 X-bar 规则本身。)"
 msgstr ""
 
-#: Game.Levels.DemoWorld.L01_HelloWorld
-msgid "This last message appears if the level is solved."
+#. §0: `specifier DP`
+#: Game.Levels.XBar.L05_Colorless
+msgid "TP 带主语:§0。"
 msgstr ""
 
-#: Game.Levels.DemoWorld.L01_HelloWorld
-msgid "This text is shown as first message when the level is played.\n"
-"You can insert hints in the proof below. They will appear in this side panel\n"
-"depending on the proof a user provides."
+#: Game.Levels.XBar.L04_Adjunct
+msgid "先把 AP 搭完(它自己也要走全程投射),回头再处理 N′。"
 msgstr ""
 
-#: Game.Levels.DemoWorld
-msgid "This introduction is shown before one enters level 1 of the demo world. Use markdown."
+#. §0: `NP`
+#. §1: `head`
+#. §2: `nospec`
+#. §3: `nocomp`
+#. §4: `nospec`
+#. §5: `nocomp`
+#. §6: `head`
+#. §7: `head \"ideas\"`
+#: Game.Levels.XBar.L02_Projection
+msgid "这一关的目标是 §0——一个完整的名词短语。但你手里的指令 §1 只会在 X⁰ 上工作。\n"
+"\n"
+"X-bar 理论的主张:词不能直接当短语用。哪怕短语里只有一个词,\n"
+"它也必须走完投射的全程:X⁰ → X′ → XP。每一层都是真实的结构。\n"
+"\n"
+"两条新规则:\n"
+"\n"
+"- §2 —— XP → X′(这个短语没有 specifier)\n"
+"- §3 —— X′ → X⁰(这个中心语没有补足语)\n"
+"\n"
+"自上而下拆解:先 §4 把 NP 拆到 N′,再 §5 拆到 N⁰,最后 §6。\n"
+"\n"
+"(不信的话,可以先直接试 §7,读一读系统怎么拒绝你。)"
 msgstr ""
 
-#. §0: `«{h}»`
-#. §1: `«{g}»`
-#: Game.Levels.DemoWorld.L01_HelloWorld
-msgid "You can either start using §0 or §1."
+#: Game.Levels.XBar.L04_Adjunct
+msgid "为 *my big house* 建一个 DP。"
 msgstr ""
 
-#: Game.Levels.DemoWorld
-msgid "Demo World"
+#. §0: `adjoinL AP`
+#. §1: `N′`
+#. §2: `AP`
+#. §3: `N′`
+#: Game.Levels.XBar.L04_Adjunct
+msgid "注意 §0 前后:目标从 §1 变成 §2 和 §3——层级没有升,\n"
+"附加语只是横向挂载。这就是\"附接不改变 bar 级别\"在操作层面的样子。"
+msgstr ""
+
+#: Game.Levels.XBar.L05_Colorless
+msgid "为 *Colorless green ideas sleep furiously* 建一棵完整的 CP。"
+msgstr ""
+
+#: GameServer.RpcHandlers
+msgid "level completed with warnings… 🎭"
+msgstr ""
+
+#. §0: `nospec`
+#. §1: `adjoinL AP`
+#: Game.Levels.XBar.L04_Adjunct
+msgid "NP 里要先挂附加语再放中心语:§0 之后 §1。"
 msgstr ""
 
 #: Game
-msgid "Game Template"
+msgid "欢迎来到句法游戏。\n"
+"\n"
+"在这里,你将扮演一台句法引擎:用 X-bar 理论的规则,亲手把词搭成短语、把短语搭成句子。\n"
+"每一步都是一条真实的句法规则;每一个错误都会被系统用语言学的语言拒绝。\n"
+"\n"
+"这个游戏运行在 Lean 4 定理证明器上——你搭出的每一棵树,都是被机器验证过的形式对象。"
+msgstr ""
+
+#. §0: `adjoinR XP`
+#: Game.Metadata
+msgid "§0 —— 右附接:在 X′ 的右侧挂一个附加语,层级不变(X′ → X′ + 附加语)。"
+msgstr ""
+
+#. §0: `head \"词\"`
+#. §1: `head \"\"`
+#: Game.Metadata
+msgid "§0 —— 在 X⁰ 目标上种下一个词。空头(不发音的功能中心语)写 §1。"
+msgstr ""
+
+#. §0: `adjoinL XP`
+#: Game.Levels.XBar.L04_Adjunct
+msgid "目标:*my big house*。比上一关多了一个 *big*——形容词短语,作**附加语**(adjunct)。\n"
+"\n"
+"附加语和补足语的区别是 X-bar 理论的辨析核心:补足语被中心语选择、改变层级\n"
+"(X⁰ + 补足语 → X′);附加语不被选择、**不改变层级**(X′ + 附加语 → 还是 X′)。\n"
+"所以附加语可以堆叠,也可以不出现。\n"
+"\n"
+"新规则 §0:在 X′ 的左侧挂一个附加语。\n"
+"注意挂上去的必须是**完整的短语**——*big* 要先自己投射成 AP。"
+msgstr ""
+
+#: Game.Levels.XBar
+msgid "X-bar 世界"
+msgstr ""
+
+#. §0: `N⁰`
+#. §1: `head \"ideas\"`
+#: Game.Levels.XBar.L01_Head
+msgid "每棵句法树都从词开始。词从词库进入句法,站上的第一个位置叫**中心语**(head),记作 X⁰。\n"
+"\n"
+"目标面板上显示 §0:一个等待被填充的**名词性中心语位置**。\n"
+"\n"
+"把词种进去:输入 §1。"
+msgstr ""
+
+#: Game.Levels.XBar.L01_Head
+msgid "词与中心语"
+msgstr ""
+
+#. §0: `adjoinL XP`
+#: Game.Metadata
+msgid "§0 —— 左附接:在 X′ 的左侧挂一个附加语,层级不变(X′ → 附加语 + X′)。"
+msgstr ""
+
+#. §0: `nospec`
+#: Game.Levels.XBar.L03_Complement
+msgid "老规矩,§0 开顶。"
+msgstr ""
+
+#. §0: `D′`
+#. §1: `complement VP`
+#. §2: `complement NP`
+#: Game.Levels.XBar.L03_Complement
+msgid "现在在 §0。想试非法搭配就是此刻:§1。正路是 §2。"
+msgstr ""
+
+#: Game.Levels.XBar.L05_Colorless
+msgid "Colorless green ideas sleep furiously"
+msgstr ""
+
+#: GameServer.RpcHandlers
+msgid "level completed! 🎉"
+msgstr ""
+
+#. §0: `✗ selection violation: D does not select V`
+#: Game.Levels.XBar.L03_Complement
+msgid "如果你做了那个实验,你已经见过这个游戏最重要的一句话:\n"
+"\n"
+"§0\n"
+"\n"
+"不合语法的搭配,在这个系统里不是\"被标红的错误\",而是**根本造不出来的对象**——\n"
+"它需要一张不存在的许可证。"
+msgstr ""
+
+#. §0: `T′`
+#: Game.Levels.XBar.L05_Colorless
+msgid "主语完工。现在是 §0:空 T 选择 VP。"
+msgstr ""
+
+#. §0: `Selects`
+#: Game
+msgid "本游戏是一个用 Lean 4 形式化生成句法的研究项目的教学演示。\n"
+"\n"
+"树的良构性由类型系统保证(Church 式:不合法的结构不可表达),\n"
+"中心语选择由许可关系 §0 保证(不合法的选择没有证据)。"
+msgstr ""
+
+#. §0: `nospec`
+#: Game.Levels.XBar.L02_Projection
+msgid "从 §0 开始:XP 先拆成 X′。"
+msgstr ""
+
+#: Game.Levels.XBar.L02_Projection
+msgid "为 *ideas* 建一个完整的 NP。"
+msgstr ""
+
+#. §0: `head \"my\"`
+#: Game.Levels.XBar.L03_Complement
+msgid "两个目标:先种中心语 §0,再去搭 NP。"
+msgstr ""
+
+#: Game.Levels.XBar.L05_Colorless
+msgid "先搭主语 DP:空 D 选 NP,NP 里两个 AP 左附接。"
+msgstr ""
+
+#. §0: `specifier XP`
+#: Game.Metadata
+msgid "§0 —— 规则 XP → Spec + X′:宣告这个短语带一个什么范畴的 specifier。"
+msgstr ""
+
+#. §0: `head`
+#: Game.Levels.XBar.L01_Head
+msgid "第一棵(最小的)树建成。\n"
+"\n"
+"注意:§0 只能在 X⁰ 位置种词。如果目标是 N′ 或 NP,它会拒绝你——下一关见。"
+msgstr ""
+
+#. §0: `nocomp`
+#: Game.Metadata
+msgid "§0 —— 规则 X′ → X⁰:这个中心语没有补足语,直接投射到 bar 层。\n"
+"    空洞投射的下半层。"
+msgstr ""
+
+#. §0: `nospec`
+#: Game.Levels.XBar.L05_Colorless
+msgid "最外层是 CP:§0,然后 C 选择什么?"
+msgstr ""
+
+#: Game.Levels.XBar.L02_Projection
+msgid "三步,三层。你刚才亲手执行了教科书上写作 NP → N′ → N⁰ 的那条投射线。\n"
+"\n"
+"学生画树时最常见的错误,就是把这两层直接跳过——在这个系统里,跳层根本无法输入。"
+msgstr ""
+
+#: Game
+msgid "Syntax Game · 句法游戏"
+msgstr ""
+
+#: Game.Levels.XBar.L03_Complement
+msgid "为 *my house* 建一个 DP。"
+msgstr ""
+
+#. §0: `head \"ideas\"`
+#: Game.Levels.XBar.L01_Head
+msgid "输入 §0(引号是指令的一部分)。"
+msgstr ""
+
+#. §0: `specifier XP`
+#. §1: `adjoinR XP`
+#. §2: `head \"\"`
+#: Game.Levels.XBar.L05_Colorless
+msgid "终关:Chomsky 1957 年那句著名的话——语义荒谬,句法完美。\n"
+"你要为整句建一棵 CP,证明它**合语法**。\n"
+"\n"
+"三样新东西:\n"
+"\n"
+"- §0:短语带 specifier 时用它封顶(主语住在 TP 的 specifier 里)\n"
+"- §1:右附接(*furiously* 挂在 V′ 右侧)\n"
+"- **空头**:C、D、T 三个功能中心语在这句里都不发音,用 §2 种下——\n"
+"  看不见,但结构上在。\n"
+"\n"
+"整句的骨架:CP ⟶ C⁰ + TP;TP ⟶ 主语DP + T′;T′ ⟶ T⁰ + VP。\n"
+"自上而下,一层一层来。"
+msgstr ""
+
+#: Game.Levels.XBar.L04_Adjunct
+msgid "附加语:可有可无,层级不变"
+msgstr ""
+
+#. §0: `N′`
+#. §1: `nocomp`
+#: Game.Levels.XBar.L02_Projection
+msgid "现在目标是 §0。用 §1 拆到中心语层。"
+msgstr ""
+
+#: Game.Levels.XBar.L01_Head
+msgid "为词 *ideas* 建一个名词中心语 N⁰。"
+msgstr ""
+
+#. §0: `N⁰`
+#. §1: `head \"ideas\"`
+#: Game.Levels.XBar.L02_Projection
+msgid "§0 到了,种词:§1。"
+msgstr ""
+
+#. §0: `complement XP`
+#: Game.Metadata
+msgid "§0 —— 规则 X′ → X⁰ + 补足语:宣告中心语选择一个什么范畴的补足语。\n"
+"    选择在此刻当场检查:无许可的搭配会被立即拒绝。"
+msgstr ""
+
+#: Game.Levels.XBar.L03_Complement
+msgid "补足语与选择"
+msgstr ""
+
+#. §0: `adjoinR AdvP`
+#: Game.Levels.XBar.L05_Colorless
+msgid "VP 内部:*furiously* 右附接在 V′ 上,先 §0 再种 *sleep*。"
 msgstr ""
