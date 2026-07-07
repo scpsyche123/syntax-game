@@ -28,31 +28,42 @@ TacticDoc adjoinR
 /-- `specifier XP` —— 规则 XP → Spec + X′:宣告这个短语带一个什么范畴的 specifier。 -/
 TacticDoc specifier
 
-/-! Definition docs: the phrase-type vocabulary players use in declarations. -/
+/-! Definition docs: the phrase-type vocabulary players use in declarations.
+
+Registered under `*Def`-suffixed keys, NOT the bare `NP`/`VP`/… tokens. Reason:
+`NewHiddenTactic «NP» …` (in L03) also registers bare `NP` etc. under the
+Tactic inventory (needed so `complement NP` clears the tactic-availability
+gate — see L03's own comment). GameServer's `MakeGame` pools every level's
+hidden-item names into ONE flat, type-blind `HashSet Name` before deciding
+what to hide in the JSON output: if a Definition entry has the SAME bare
+name as a hidden Tactic entry, it gets hidden too, even though `NewDefinition`
+never asked for that. Using a distinct key (`NPDef`, not `NP`) side-steps the
+collision; the player-visible label (`as "NP"`) is unaffected — this is a
+backstage bookkeeping key, not something a player ever types or sees. -/
 
 /-- **NP**(名词短语):以名词为中心语的完整短语,如 *ideas*、*big house*。 -/
-DefinitionDoc «NP» as "NP"
+DefinitionDoc «NPDef» as "NP"
 
 /-- **VP**(动词短语):以动词为中心语的完整短语,如 *sleep furiously*。 -/
-DefinitionDoc «VP» as "VP"
+DefinitionDoc «VPDef» as "VP"
 
 /-- **AP**(形容词短语):以形容词为中心语的完整短语,如 *big*、*colorless*。 -/
-DefinitionDoc «AP» as "AP"
+DefinitionDoc «APDef» as "AP"
 
 /-- **PP**(介词短语):以介词为中心语的完整短语。 -/
-DefinitionDoc «PP» as "PP"
+DefinitionDoc «PPDef» as "PP"
 
 /-- **AdvP**(副词短语):以副词为中心语的完整短语,如 *furiously*。 -/
-DefinitionDoc «AdvP» as "AdvP"
+DefinitionDoc «AdvPDef» as "AdvP"
 
 /-- **TP**(时制短语):以 T(时制/一致)为中心语的短语,主语住在它的 specifier 里。 -/
-DefinitionDoc «TP» as "TP"
+DefinitionDoc «TPDef» as "TP"
 
 /-- **DP**(限定词短语):以限定词为中心语的短语,如 *my house*。 -/
-DefinitionDoc «DP» as "DP"
+DefinitionDoc «DPDef» as "DP"
 
 /-- **CP**(标句词短语):以 C 为中心语的短语——整句的最外层。 -/
-DefinitionDoc «CP» as "CP"
+DefinitionDoc «CPDef» as "CP"
 
 /-- **ConjP**(连词短语):以连词为中心语的短语。 -/
-DefinitionDoc «ConjP» as "ConjP"
+DefinitionDoc «ConjPDef» as "ConjP"

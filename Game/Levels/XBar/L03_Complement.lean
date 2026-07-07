@@ -40,10 +40,16 @@ Conclusion "
 "
 
 NewTactic complement
-NewDefinition «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
 
--- 双轨并行:NewDefinition 喂词汇/定义登记表(玩家词汇面板);
--- NewHiddenTactic 喂 tactic 门禁(complement/specifier/adjoin 的参数 token
--- 被门禁当指令盘查,单靠 NewDefinition 放不行,故此处显式放行)。
+-- 双轨并行,且刻意用两套不同的名字:
+-- · NewDefinition 喂词汇/定义登记表(玩家词汇面板),登记键是 «NPDef» 等
+--   (显示文本仍是 "NP",见 Metadata.lean;键名本身玩家永远看不到)。
+-- · NewHiddenTactic 喂 tactic 门禁(complement/specifier/adjoin 的参数 token
+--   被门禁当指令盘查,单靠 NewDefinition 放不行,故此处显式放行),登记键
+--   是裸 «NP» 等(门禁按玩家敲的字面 token 匹配,不能改名)。
+-- 两套键名故意不同:GameServer 的 MakeGame 把全游戏"该隐藏"的名字塞进
+-- 同一个不分类别的名单,若两边同名,词汇面板会被 NewHiddenTactic 连累隐藏
+-- (曾经发生过)。键名不同 = 两份登记互不干扰。
 -- 全九类一次登齐,后续关卡(L04 用 AP,L05 用 TP/DP/… )自动继承。
+NewDefinition «NPDef» «VPDef» «APDef» «PPDef» «AdvPDef» «TPDef» «DPDef» «CPDef» «ConjPDef»
 NewHiddenTactic «NP» «VP» «AP» «PP» «AdvP» «TP» «DP» «CP» «ConjP»
