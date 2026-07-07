@@ -85,7 +85,6 @@ package Game where
     -- TODO: replace with `lean4game.verbose`
     ⟨`trace.debug, true⟩]
 
-lean_lib XSyntax
-
 @[default_target]
+lean_lib XSyntax
 lean_lib Game
