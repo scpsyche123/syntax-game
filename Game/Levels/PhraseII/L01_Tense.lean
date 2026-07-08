@@ -24,6 +24,8 @@ T 选择一个 VP 作补足语(*will* 底下是 *sleep*)。而**主语** *cats* 
 标准分析。)
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *cats will sleep* 建一个 TP。 -/
 Statement : XSyntax.Utters .two .T "cats will sleep" := by
   Hint "整句是 TP,带主语:`specifier NP`。会开出主语 NP 和 T′ 两个目标。"

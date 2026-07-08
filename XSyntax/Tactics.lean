@@ -44,9 +44,15 @@ construction side — a design decision, pending.
 
 import Lean
 import XSyntax.Display
+import XSyntax.TreeView
 import XSyntax.Vocabulary
 
 open Lean Elab Tactic Meta
+
+register_option XSyntax.treeView.enabled : Bool := {
+  defValue := true
+  descr := "show the live syntax tree marker in interactive goal states"
+}
 
 namespace XSyntax
 
@@ -359,6 +365,97 @@ private def declaredXPPos (stx : Term) (who : String) : TacticM Expr := do
   | none =>
     throwError "✗ {who} must be a syntactic position (an XP); you declared {d}"
 
+private def barTrace? (e : Expr) : Option String :=
+  if      e.isConstOf ``Bar.two  then some "two"
+  else if e.isConstOf ``Bar.one  then some "one"
+  else if e.isConstOf ``Bar.zero then some "zero"
+  else none
+
+private def posTrace? (e : Expr) : Option String :=
+  if      e.isConstOf ``Pos.N    then some "N"
+  else if e.isConstOf ``Pos.V    then some "V"
+  else if e.isConstOf ``Pos.A    then some "A"
+  else if e.isConstOf ``Pos.P    then some "P"
+  else if e.isConstOf ``Pos.Adv  then some "Adv"
+  else if e.isConstOf ``Pos.T    then some "T"
+  else if e.isConstOf ``Pos.D    then some "D"
+  else if e.isConstOf ``Pos.C    then some "C"
+  else if e.isConstOf ``Pos.Conj then some "Conj"
+  else none
+
+private def joinTabs : List String → String
+  | [] => ""
+  | x :: xs => xs.foldl (fun acc part => acc ++ "\t" ++ part) x
+
+private def treeViewDecl? (g : MVarId) : TacticM (Option (FVarId × String)) := do
+  g.withContext do
+    for localDecl in (← getLCtx) do
+      let ty ← instantiateMVars localDecl.type
+      if ty.getAppFn.isConstOf ``TreeView && ty.getAppArgs.size == 1 then
+        match ty.getArg! 0 with
+        | .lit (.strVal events) => return some (localDecl.fvarId, events)
+        | _ => return some (localDecl.fvarId, "")
+    return none
+
+private def currentTreeViewEvents? (goals : List MVarId) : TacticM (Option String) := do
+  for g in goals do
+    match (← treeViewDecl? g) with
+    | some (_, events) => return some events
+    | none => pure ()
+  return none
+
+private def clearTreeView? (g : MVarId) : TacticM MVarId := do
+  match (← treeViewDecl? g) with
+  | some (fvarId, _) => g.clear fvarId
+  | none => return g
+
+private def takeTreeViewEvents : TacticM String := do
+  unless XSyntax.treeView.enabled.get (← getOptions) do
+    return ""
+  let goals ← getGoals
+  let previous := (← currentTreeViewEvents? goals).getD ""
+  let mut clearedGoals := []
+  for g in goals do
+    clearedGoals := clearedGoals ++ [← clearTreeView? g]
+  setGoals clearedGoals
+  return previous
+
+private def eventForCurrentGoal (op arg word : String) : TacticM String := do
+  try
+    let t ← goalType
+    match asUtters? t with
+    | some u =>
+      return joinTabs [op, (barTrace? u.bar).getD "?", (posTrace? u.pos).getD "?", arg, word, u.target]
+    | none =>
+      match asXTree? t with
+      | some (bar, pos) =>
+        return joinTabs [op, (barTrace? bar).getD "?", (posTrace? pos).getD "?", arg, word, ""]
+      | none =>
+        return joinTabs [op, "?", "?", arg, word, ""]
+  catch _ =>
+    return joinTabs [op, "?", "?", arg, word, ""]
+
+private def appendTreeViewToAllGoals (previous event : String) : TacticM Unit := do
+  unless XSyntax.treeView.enabled.get (← getOptions) do
+    return
+  let goals ← getGoals
+  if goals.isEmpty then
+    return
+  let events := if previous == "" then event else previous ++ "\n" ++ event
+  let viewType ← mkAppM ``TreeView #[toExpr events]
+  let viewProof ← mkAppM ``treeViewIntro #[toExpr events]
+  let mut updated := []
+  for g in goals do
+    let cleared ← clearTreeView? g
+    let (_, noted) ← cleared.note `treeView viewProof viewType
+    updated := updated ++ [noted]
+  setGoals updated
+
+private def appendTreeViewEvent (event : String) : TacticM Unit := do
+  let goals ← getGoals
+  let previous := (← currentTreeViewEvents? goals).getD ""
+  appendTreeViewToAllGoals previous event
+
 /-- INTERNAL. After a split `refine` has opened goals tagged `front`/`back`
     (and parked a `comb` proof), park a `SplitLink` recording that `back`'s
     target is the parent span `whole` minus `front`'s yield, then show only
@@ -378,9 +475,16 @@ private def installSplitLink (whole : String) (others : List MVarId) : TacticM U
     | _      => pure ()
   match front?, back? with
   | some front, some back =>
+    let frontTy ← instantiateMVars (← front.getType)
     let backTy ← instantiateMVars (← back.getType)
     let restTarget := backTy.getAppArgs[2]!
-    let frontVal ← mkAppM ``Subtype.val #[mkMVar front]
+    let frontVal ←
+      if frontTy.getAppFn.isConstOf ``Utters then
+        mkAppM ``Subtype.val #[mkMVar front]
+      else
+        match asXTree? frontTy with
+        | some _ => pure (mkMVar front)
+        | none => throwError "installSplitLink: front goal is not a syntactic tree"
     let refExpr ← mkAppM ``yield #[frontVal]
     let linkTy ← mkAppM ``SplitLink #[toExpr whole, refExpr, restTarget]
     let _ ← mkFreshExprMVar linkTy (userName := `splitLink)
@@ -452,8 +556,10 @@ private def tryTargetSpecifier (t : Term) : TacticM Bool := do
 
 /-- `XP → X′` (no specifier). Vacuous top projection, made explicit. -/
 elab "nospec" : tactic => do
+  let event ← eventForCurrentGoal "nospec" "" ""
   if ← tryTargetNospec then
     closeUtters
+    appendTreeViewEvent event
     return
   enterUtters
   let t ← goalType
@@ -465,11 +571,14 @@ elab "nospec" : tactic => do
       throwError "✗ nospec closes off a full phrase (XP); the position here is {t}"
   | none => throwError "nospec: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewEvent event
 
 /-- `X′ → X⁰` (no complement). Vacuous bar projection, made explicit. -/
 elab "nocomp" : tactic => do
+  let event ← eventForCurrentGoal "nocomp" "" ""
   if ← tryTargetNocomp then
     closeUtters
+    appendTreeViewEvent event
     return
   enterUtters
   let t ← goalType
@@ -481,14 +590,17 @@ elab "nocomp" : tactic => do
       throwError "✗ nocomp projects a head to bar level (X′); the position here is {t}"
   | none => throwError "nocomp: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewEvent event
 
 /-- Plant a word (or `""` for a null head) at an `X⁰` goal. -/
 elab "head" w:str : tactic => do
   let word := w.getString
   if word != "" && hasWhitespace word then
     throwError "✗ head 一次只能种一个词；多个词必须各自占一个 head，空头才写 `head \"\"`"
+  let event ← eventForCurrentGoal "head" "" word
   if ← tryTargetHead w then
     closeUtters
+    appendTreeViewEvent event
     return
   enterUtters
   let t ← goalType
@@ -501,11 +613,15 @@ elab "head" w:str : tactic => do
       throwError "✗ a bare head cannot stand at {t} — project it first (nocomp / nospec)"
   | none => throwError "head: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewEvent event
 
 /-- `XP → Spec X′`. Usage: `specifier DP` — declare the specifier. -/
 elab "specifier" t:term : tactic => do
+  let previous ← takeTreeViewEvents
+  let event ← eventForCurrentGoal "specifier" (toString t) ""
   if ← tryTargetSpecifier t then
     closeUtters
+    appendTreeViewToAllGoals previous event
     return
   enterUtters
   let g ← goalType
@@ -518,13 +634,17 @@ elab "specifier" t:term : tactic => do
       throwError "✗ a specifier merges at the phrase level (XP); the position here is {g}"
   | none => throwError "specifier: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewToAllGoals previous event
 
 /-- `X′ → X⁰ Compl`. Usage: `complement NP` — declare the complement.
     Selection is checked here, at the moment of combination: an unlicensed
     pair makes this very command fail, in the licensing layer's own words. -/
 elab "complement" t:term : tactic => do
+  let previous ← takeTreeViewEvents
+  let event ← eventForCurrentGoal "complement" (toString t) ""
   if ← tryTargetComplement t then
     closeUtters
+    appendTreeViewToAllGoals previous event
     return
   enterUtters
   let g ← goalType
@@ -537,11 +657,15 @@ elab "complement" t:term : tactic => do
       throwError "✗ a complement merges at the bar level (X′); the position here is {g}"
   | none => throwError "complement: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewToAllGoals previous event
 
 /-- `X′ → Adjunct X′` (left adjunction). Usage: `adjoinL AP`. -/
 elab "adjoinL" t:term : tactic => do
+  let previous ← takeTreeViewEvents
+  let event ← eventForCurrentGoal "adjoinL" (toString t) ""
   if ← tryTargetAdjoinL t then
     closeUtters
+    appendTreeViewToAllGoals previous event
     return
   enterUtters
   let g ← goalType
@@ -554,11 +678,15 @@ elab "adjoinL" t:term : tactic => do
       throwError "✗ an adjunct merges at the bar level (X′); the position here is {g}"
   | none => throwError "adjoinL: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewToAllGoals previous event
 
 /-- `X′ → X′ Adjunct` (right adjunction). Usage: `adjoinR AdvP`. -/
 elab "adjoinR" t:term : tactic => do
+  let previous ← takeTreeViewEvents
+  let event ← eventForCurrentGoal "adjoinR" (toString t) ""
   if ← tryTargetAdjoinR t then
     closeUtters
+    appendTreeViewToAllGoals previous event
     return
   enterUtters
   let g ← goalType
@@ -571,6 +699,7 @@ elab "adjoinR" t:term : tactic => do
       throwError "✗ an adjunct merges at the bar level (X′); the position here is {g}"
   | none => throwError "adjoinR: the goal is not a syntactic position"
   closeUtters
+  appendTreeViewToAllGoals previous event
 
 /-! ### Refutation (the eighth command) -/
 

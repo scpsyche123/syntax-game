@@ -20,6 +20,8 @@ Introduction "
 所以整句的完整骨架是:CP ⟶ C⁰ + TP。C 选择 TP 作补足语。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *cats sleep* 建一个完整的 CP(空 C、空 T)。 -/
 Statement : XSyntax.Utters .two .C "cats sleep" := by
   Hint "最外层是 CP:`nospec` 到 C′,然后 C 选 TP —— `complement TP`。"

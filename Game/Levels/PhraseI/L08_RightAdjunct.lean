@@ -20,6 +20,8 @@ Introduction "
 具体哪边由语言的参数(和词项)敲定。这一关你先把「右附接」这个动作练熟。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *sleep quickly* 建一个 VP。 -/
 Statement : XSyntax.Utters .two .V "sleep quickly" := by
   Hint "`nospec` 开顶到 V′。"

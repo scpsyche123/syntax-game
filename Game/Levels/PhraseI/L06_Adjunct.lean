@@ -20,6 +20,8 @@ Introduction "
 注意挂上去的必须是**完整的短语**——*big* 要先自己投射成 AP。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *my big house* 建一个 DP。 -/
 Statement : XSyntax.Utters .two .D "my big house" := by
   Hint "老三步开头:`nospec`,然后 D 选 NP —— `complement NP`。"

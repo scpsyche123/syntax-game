@@ -22,6 +22,8 @@ Introduction "
 和 `complement` 拒绝非法搭配时用的是同一套语言。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 证明 D 不选择 V——*the sleep* 这类病句背后的结构原因。 -/
 Statement : ¬ XSyntax.Selects .D .V := by
   CannotSelect

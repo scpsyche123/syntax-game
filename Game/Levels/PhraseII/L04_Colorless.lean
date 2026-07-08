@@ -21,6 +21,8 @@ Introduction "
 自上而下,一层一层来。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *Colorless green ideas sleep furiously* 建一棵完整的 CP。 -/
 Statement : XSyntax.Utters .two .C "Colorless green ideas sleep furiously" := by
   Hint "最外层是 CP:`nospec`,然后 C 选择什么?"

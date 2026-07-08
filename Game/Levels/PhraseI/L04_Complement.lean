@@ -24,6 +24,8 @@ Introduction "
 然后再用 `complement DP` 走正路。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *sees the cat* 建一个 VP。 -/
 Statement : XSyntax.Utters .two .V "sees the cat" := by
   Hint "`nospec` 开顶:VP 拆到 V′。"

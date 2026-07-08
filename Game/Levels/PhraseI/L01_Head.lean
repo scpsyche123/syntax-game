@@ -13,6 +13,8 @@ Introduction "
 把词种进去:输入 `head \"ideas\"`。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为词 *ideas* 建一个名词中心语 N⁰。 -/
 Statement : XSyntax.Utters .zero .N "ideas" := by
   Hint "输入 `head \"ideas\"`(引号是指令的一部分)。"

@@ -19,6 +19,8 @@ Introduction "
 一层一层往下,先搭主语、再搭谓语。搭错了,系统会用语言学的话拦住你,读完再来。
 "
 
+set_option XSyntax.treeView.enabled false
+
 /-- 为 *the big dog sees the cat* 建一个完整的 CP。自己组装。 -/
 Statement : XSyntax.Utters .two .C "the big dog sees the cat" := by
   Hint "CP 外壳:`nospec` → `complement TP` → 空 C `head \"\"`。"
