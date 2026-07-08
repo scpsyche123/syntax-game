@@ -10,11 +10,31 @@ linguistic mistake, name it; otherwise run the tactic and let deeper
 layers speak for themselves (selection violations surface from `license!`
 untouched — layering by NOT catching).
 
-Player vocabulary (seven commands, one per X-bar rule):
+v4 (commitment-driven segmentation): a split (`complement`/`adjoinL`/
+`adjoinR`/`specifier`) NO LONGER pre-computes where the parent string breaks.
+It opens the two children with UNDECIDED targets and remembers, in a parked
+`SplitLink` marker, that one child's target is the parent span minus the
+other child's surface string. The instant the player commits the reference
+child (e.g. `head "my"` at the D⁰), `closeUtters` reduces that child's yield
+to a literal, subtracts it from the parent span IN META CODE (compiled
+`residual`, never the kernel), and pins the sibling's target. So the panel
+shows `NP ： "house"` only as a CONSEQUENCE of the player's own choice — the
+boundary is never handed to them.
+
+v5 (immediate feedback, 小红): a wrong commit no longer waits for the final
+combination proof. The instant the reference child is built, `closeUtters`
+checks its yield is a prefix of the parent span and REFUSES on the spot if not;
+`nocomp` refuses immediately if its X⁰ span is multiword. Since the XBar
+solution is unique, every wrong word / order / structure breaks a prefix or a
+structural invariant at the moment it is committed. The non-spoiler property is
+kept: before the commit both children still show bare `D⁰` / `NP`.
+
+Player vocabulary (eight commands): the seven X-bar rules
   nospec · nocomp · specifier · complement · adjoinL · adjoinR · head
-`license!` is internal machinery, not player vocabulary. `tree` and
-`pronounce` are gone (v3): grammaticality theorems are now stated in term
-mode, with the built tree as the witness — see Playground Scene 5.
+plus `CannotSelect`, which PROVES a head–complement pairing is unlicensed
+(goal `¬ Selects c d`). `license!` is internal machinery, not player
+vocabulary. `tree` and `pronounce` are gone (v3): grammaticality theorems are
+now stated in term mode, with the built tree as the witness — see Playground.
 
 Known gap, on the books: `head` does not consult the lexicon, so a word's
 category is dictated by the position it is planted in ("sleeps" happily
@@ -24,6 +44,7 @@ construction side — a design decision, pending.
 
 import Lean
 import XSyntax.Display
+import XSyntax.Vocabulary
 
 open Lean Elab Tactic Meta
 
@@ -121,68 +142,25 @@ private def posTerm? (e : Expr) : Option (TSyntax `term) :=
   else if e.isConstOf ``Pos.Conj then some (mkIdent ``Pos.Conj)
   else none
 
-private def words (s : String) : List String :=
-  (s.split (·.isWhitespace)).filter (· != "")
-
-private def joinWords : List String → String
-  | [] => ""
-  | w :: ws => ws.foldl (fun acc x => acc ++ " " ++ x) w
-
-private def splitFirstWord (s : String) : String × String :=
-  match words s with
-  | [] => ("", "")
-  | w :: ws => (w, joinWords ws)
-
-private def splitLastWord (s : String) : String × String :=
-  let ws := words s
-  match ws.reverse with
-  | [] => ("", "")
-  | w :: rest => (joinWords rest.reverse, w)
-
-private def isDeterminer (s : String) : Bool :=
-  ["my", "the", "a", "an", "this", "that", "these", "those"].contains s
-
-/-- Known modal/auxiliary spellings of an overt T. Anything else at a T-selects-V
-    complement defaults to a null head, matching the game's earlier (silent-T)
-    levels. -/
-private def isModal (s : String) : Bool :=
-  ["will", "can", "may", "must", "shall", "would", "could", "might", "should",
-   "did", "does"].contains s
-
-/-- Words that mark where a specifier (subject) ends and the rest of the clause
-    begins: either a known predicate verb, or an overt T/modal — both signal
-    "the clause proper starts here". -/
-private def isClauseBoundaryWord (s : String) : Bool :=
-  isModal s || ["sleep", "sleeps", "see", "sees"].contains s
-
-private def splitHeadComplementTarget (headPos compPos : Expr) (target : String) : String × String :=
-  if headPos.isConstOf ``Pos.C && compPos.isConstOf ``Pos.T then
-    ("", target)
-  else if headPos.isConstOf ``Pos.T && compPos.isConstOf ``Pos.V then
-    let (first, rest) := splitFirstWord target
-    if isModal first then (first, rest) else ("", target)
-  else if headPos.isConstOf ``Pos.D && compPos.isConstOf ``Pos.N then
-    let (first, rest) := splitFirstWord target
-    if isDeterminer first then (first, rest) else ("", target)
+/-- INTERNAL, META-ONLY. The parent span `whole` with the reference child's
+    surface string `prefixStr` removed from its front (with the joining space).
+    Runs as compiled code inside the tactic — never as a type index, so the
+    kernel never has to reduce `String.take`/`drop`. A non-prefix leaves the
+    span unchanged, so a wrong commit surfaces as the phrase mispronouncing. -/
+def residual (whole prefixStr : String) : String :=
+  if whole == prefixStr then ""
   else
-    splitFirstWord target
+    let p := prefixStr ++ " "
+    if whole.take p.length == p then whole.drop p.length
+    else whole
 
-private def splitLeftAdjunctTarget (target : String) : String × String :=
-  splitFirstWord target
-
-private def splitRightAdjunctTarget (target : String) : String × String :=
-  splitLastWord target
-
-private def splitSpecifierTarget (target : String) : String × String :=
-  let rec go (before after : List String) : String × String :=
-    match after with
-    | [] => splitFirstWord target
-    | w :: rest =>
-      if isClauseBoundaryWord w then
-        (joinWords before, joinWords after)
-      else
-        go (before ++ [w]) rest
-  go [] (words target)
+/-- INTERNAL, META-ONLY MARKER. Parked by a split tactic. Definitionally
+    `True`, so it never obstructs a proof and is discharged the moment it
+    fires. Its INDICES carry the data `closeUtters` needs: the parent span
+    `whole`, the reference child's surface string `ref` (an expression that
+    becomes a literal once that child is built), and the sibling's target
+    metavariable, which gets pinned to `residual whole ref`. -/
+def SplitLink (_whole _ref _rest : String) : Prop := True
 
 /-- INTERNAL. If the main goal is `Utters …`, split it and hide the
     yield-proof, leaving only the tree goal visible. No-op otherwise. -/
@@ -194,27 +172,105 @@ private def enterUtters : TacticM Unit := do
     | treeG :: _prf :: rest => setGoals (treeG :: rest)
     | _ => pure ()
 
-/-- INTERNAL. Once the tree is complete, discharge the parked `yield t = s`;
-    if the tree pronounces something other than the target, refuse by name. -/
-private def closeUtters : TacticM Unit := do
+/-- INTERNAL, META-ONLY. Fully evaluate a `yield …` expression to its surface
+    string, or `none` if the tree still has holes. `.all` reduction strips the
+    `Subtype.val ⟨tree, ?proof⟩` projections (so parked PROOF mvars drop out);
+    any metavariable that survives is a genuine unbuilt TREE part → `none`.
+    Compiled `evalExpr` turns the reduced form into a clean `String` literal
+    (avoiding the `String.mk [chars…]` shape a raw `.all` whnf leaves behind). -/
+private def reduceYield? (e : Expr) : TacticM (Option String) := do
+  let r ← withTransparency .all (whnf e)
+  if r.hasExprMVar then return none
+  return some (← unsafe Meta.evalExpr String (.const ``String []) r)
+
+/-- INTERNAL. Run after every command. Two sweeps over the metavariable
+    context:
+
+    1. `SplitLink whole ref ?rest`: once `ref` (a reference child's yield)
+       evaluates to a literal, subtract it from `whole` in meta code and pin
+       the sibling target `?rest`. This is the commitment-driven segmentation.
+    2. `yield t = s`: once the tree is fully built (every leftover mvar in it
+       is a PROOF, not an unbuilt subtree), discharge the parked proof —
+       assigning an open `?_` target, or refl-checking a fixed literal, or
+       REFUSING in linguistics if the tree pronounces the wrong string.
+       `refl` closes via the kernel's own (cheap, string-accelerated) defeq;
+       we deliberately do NOT pre-reduce the whole tree here — on the big L05
+       sentence that blows the heartbeat budget out from under `refl`. -/
+private def closeUtters : TacticM Unit :=
+  -- A generous, reset budget: the final sweep on the big L05 sentence reduces
+  -- several subtrees AND refl-checks the whole tree; the default 200k window
+  -- (already partly spent by earlier tactics) would starve the closing `refl`
+  -- and misreport the timeout as a mispronunciation.
+  withTheReader Core.Context (fun ctx => { ctx with maxHeartbeats := 10000000 }) do
   for (mvarId, decl) in (← getMCtx).decls.toList do
     unless (← mvarId.isAssigned) do
       let dty ← instantiateMVars decl.type
-      let args := dty.getAppArgs
-      if dty.isAppOf ``Eq && args.size == 3 && args[1]!.getAppFn.isConstOf ``yield then
-        unless dty.hasExprMVar do
-          try
-            mvarId.refl
-          catch _ =>
-            let said ← unsafe Meta.evalExpr String (.const ``String []) args[1]!
-            throwError "✗ 这棵树念作 \"{said}\",不是目标 {args[2]!}"
+      -- Sweep 1: resolve a pending segmentation.
+      if dty.getAppFn.isConstOf ``SplitLink && dty.getAppNumArgs == 3 then
+        let a := dty.getAppArgs
+        match a[0]! with
+        | .lit (.strVal whole) =>
+          match ← reduceYield? a[1]! with
+          | some r =>
+            let restE := a[2]!
+            -- IMMEDIATE FEEDBACK (小红): the reference child's surface string
+            -- must be a prefix of the parent span. `residual` would silently
+            -- return the span unchanged on a non-prefix, deferring the error to
+            -- the final combination proof (小蓝's original behaviour). Instead
+            -- refuse the moment the reference is committed — the mistake surfaces
+            -- at THIS step, not deep downstream. Because the XBar solution here
+            -- is unique, a wrong word / wrong constituent order breaks the prefix
+            -- exactly when the player commits it.
+            -- `r == ""` is a NULL head (silent C/T/D): it contributes nothing,
+            -- so the sibling legitimately gets the whole span — accept it, don't
+            -- mistake the empty string for a non-prefix.
+            let p := r ++ " "
+            if r == "" || r == whole || whole.take p.length == p then
+              if restE.isMVar then
+                restE.mvarId!.assign (toExpr (residual whole r))
+              mvarId.assign (mkConst ``True.intro)
+            else
+              throwError "✗ 你在这里种下的 \"{r}\" 念不出目标 \"{whole}\" 的开头——这一步的用词或结构不对"
+          | none => pure ()
+        | _ => pure ()
+      -- Sweep 2: discharge a parked yield proof.
+      else
+        let args := dty.getAppArgs
+        if dty.isAppOf ``Eq && args.size == 3 && args[1]!.getAppFn.isConstOf ``yield then
+          let lhs ← instantiateMVars args[1]!
+          let rhs := args[2]!
+          -- Tree is ready ⇔ every surviving mvar in it is a proof (`Prop`);
+          -- an unbuilt subtree mvar has a `Type` (`XTree …`/`Utters …`) type.
+          let ready ← (lhs.collectMVars {}).result.allM fun mv => do
+            isProp (← mv.getType)
+          if ready then
+            -- Decide the surface string with COMPILED evaluation (fast, native
+            -- string ops), then hand the kernel an `Eq.refl` to verify. We do
+            -- NOT use the elaborator's `isDefEq`/`refl`: symbolically reducing
+            -- the whole L05 sentence's `yield` blows up there, whereas the
+            -- kernel reduces it fine (as the original per-node proofs relied on).
+            match ← reduceYield? lhs with
+            | none => pure ()
+            | some said =>
+              if rhs.isMVar then
+                -- Open target (a `?_` placeholder): pin it to the tree's yield
+                -- so the panel shows `D⁰ ： "my"`, then close.
+                rhs.mvarId!.assign (toExpr said)
+                mvarId.assign (← mkEqRefl (toExpr said))
+              else
+                let want := match rhs with | .lit (.strVal s) => s | _ => said
+                if said == want then
+                  mvarId.assign (← mkEqRefl (toExpr want))
+                else
+                  throwError "✗ 这棵树念作 \"{said}\",不是目标 \"{want}\""
 
 private def hasWhitespace (s : String) : Bool :=
   s.any (fun c => c.isWhitespace)
 
 /-! Display an `Utters` goal as e.g. `DP：my house`. Expression-level constant
     checks (`isConstOf`) — immune to the notation-rewriting pitfall that breaks
-    pattern-based unexpanders. Any mismatch → `failure` → default printing. -/
+    pattern-based unexpanders. A still-undecided target (a metavariable, before
+    the player's commitment resolves it) shows the bare category label. -/
 
 /-- Display-only notation: `<phrase> ： <target>`. Never parsed from source. -/
 syntax:max (name := uttersDisplay) term:max " ： " str : term
@@ -226,12 +282,10 @@ def delabUtters : Delab := do
   guard (e.getAppNumArgs == 3)
   let some displayName := xTreeDisplayName? (e.getArg! 0) (e.getArg! 1)
     | failure
-  let str ← match e.getArg! 2 with
-    | .lit (.strVal v) => pure v
-    | _ => failure
   let catStx := mkIdent displayName
-  let strStx := Syntax.mkStrLit str
-  `($catStx ： $strStx)
+  match e.getArg! 2 with
+  | .lit (.strVal str) => `($catStx ： $(Syntax.mkStrLit str))
+  | _                  => `($catStx)
 
 private def tryTargetNospec : TacticM Bool := do
   let some u := asUtters? (← goalType) | return false
@@ -250,6 +304,12 @@ private def tryTargetNocomp : TacticM Bool := do
   let some u := asUtters? (← goalType) | return false
   unless u.bar.isConstOf ``Bar.one do
     throwError "✗ nocomp projects a head to bar level (X′); the position here is {← goalType}"
+  -- IMMEDIATE STRUCTURAL CHECK (小红): `nocomp` sends the whole span down to a
+  -- single X⁰ head, but a head pronounces exactly one word. A multiword span
+  -- here is already doomed — refuse now with a structural hint, instead of
+  -- letting it fail one step later at `head`.
+  if hasWhitespace u.target then
+    throwError "✗ 这个中心语位置只能念一个词,但 \"{u.target}\" 是多个词——它不能直接投射到 X⁰(也许这里该用附加语或补足语?)"
   let some posStx := posTerm? u.pos | return false
   let targetStx := Syntax.mkStrLit u.target
   evalTactic (← `(tactic|
@@ -259,6 +319,25 @@ private def tryTargetNocomp : TacticM Bool := do
           simpa [XSyntax.Utters, XSyntax.yield] using child.2⟩) ?_))
   return true
 
+/-- FOREGROUND vocabulary check (小红): refuse a word the game vocabulary does
+    not license for THIS position's category. Consults `Vocabulary` via compiled
+    evaluation (single source of truth — the tactic never re-lists the words).
+    With commitment-driven segmentation this is where `head` earns its keep: the
+    player supplies the word (not copied from a pre-shown split), so its category
+    is genuinely checked here. -/
+private def checkVocab (word : String) (posE : Expr) : TacticM Unit := do
+  let ok ← unsafe Meta.evalExpr Bool (.const ``Bool [])
+    (mkApp2 (.const ``licitWord []) (toExpr word) posE)
+  unless ok do
+    let report ← unsafe Meta.evalExpr String (.const ``String [])
+      (mkApp (.const ``vocabReport []) (toExpr word))
+    let catLabel ← unsafe Meta.evalExpr String (.const ``String [])
+      (mkApp (.const ``PlotPos []) posE)
+    if report == "" then
+      throwError "✗ \"{word}\" 不在词汇表里——只能种词汇表登记过的词"
+    else
+      throwError "✗ \"{word}\" 在词汇表里是 {report},不能作 {catLabel}"
+
 private def tryTargetHead (w : TSyntax `str) : TacticM Bool := do
   let some u := asUtters? (← goalType) | return false
   unless u.bar.isConstOf ``Bar.zero do
@@ -266,6 +345,7 @@ private def tryTargetHead (w : TSyntax `str) : TacticM Bool := do
   let word := w.getString
   if word != u.target then
     throwError "✗ 这个位置要念作 \"{u.target}\",不能种 \"{word}\""
+  checkVocab word u.pos
   evalTactic (← `(tactic| exact ⟨XTree.word ⟨$w⟩, rfl⟩))
   return true
 
@@ -279,6 +359,34 @@ private def declaredXPPos (stx : Term) (who : String) : TacticM Expr := do
   | none =>
     throwError "✗ {who} must be a syntactic position (an XP); you declared {d}"
 
+/-- INTERNAL. After a split `refine` has opened goals tagged `front`/`back`
+    (and parked a `comb` proof), park a `SplitLink` recording that `back`'s
+    target is the parent span `whole` minus `front`'s yield, then show only
+    `front` and `back` (in that order). `others` are the pre-existing sibling
+    goals, preserved. -/
+private def installSplitLink (whole : String) (others : List MVarId) : TacticM Unit := do
+  let after ← getGoals
+  let fresh := after.filter (fun g => !(others.any (fun o => o.name == g.name)))
+  let mut front? : Option MVarId := none
+  let mut back? : Option MVarId := none
+  for g in fresh do
+    -- `?front`/`?back` come back with hygiene scopes appended (`front._@…hyg.88`),
+    -- so match the root component, not the full mangled name.
+    match (← g.getTag).eraseMacroScopes with
+    | `front => front? := some g
+    | `back  => back? := some g
+    | _      => pure ()
+  match front?, back? with
+  | some front, some back =>
+    let backTy ← instantiateMVars (← back.getType)
+    let restTarget := backTy.getAppArgs[2]!
+    let frontVal ← mkAppM ``Subtype.val #[mkMVar front]
+    let refExpr ← mkAppM ``yield #[frontVal]
+    let linkTy ← mkAppM ``SplitLink #[toExpr whole, refExpr, restTarget]
+    let _ ← mkFreshExprMVar linkTy (userName := `splitLink)
+    setGoals (front :: back :: others)
+  | _, _ => setGoals (fresh ++ others)
+
 private def tryTargetComplement (t : Term) : TacticM Bool := do
   let some u := asUtters? (← goalType) | return false
   unless u.bar.isConstOf ``Bar.one do
@@ -286,15 +394,13 @@ private def tryTargetComplement (t : Term) : TacticM Bool := do
   let compPos ← declaredXPPos t "a complement"
   let some headPosStx := posTerm? u.pos | return false
   let some compPosStx := posTerm? compPos | return false
-  let (headTarget, compTarget) := splitHeadComplementTarget u.pos compPos u.target
-  let headTargetStx := Syntax.mkStrLit headTarget
-  let compTargetStx := Syntax.mkStrLit compTarget
+  let others := (← getGoals).drop 1
   evalTactic (← `(tactic|
-    refine
-      (fun head : XSyntax.Utters .zero $headPosStx $headTargetStx =>
-       fun comp : XSyntax.Utters .two $compPosStx $compTargetStx =>
-        ⟨XTree.compl head.1 comp.1 (by license!), by
-          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, head.2, comp.2]⟩) ?_ ?_))
+    refine ⟨XTree.compl
+              (?front : XSyntax.Utters .zero $headPosStx ?_).1
+              (?back : XSyntax.Utters .two $compPosStx ?_).1
+              (by license!), ?comb⟩))
+  installSplitLink u.target others
   return true
 
 private def tryTargetAdjoinL (t : Term) : TacticM Bool := do
@@ -304,15 +410,12 @@ private def tryTargetAdjoinL (t : Term) : TacticM Bool := do
   let adjPos ← declaredXPPos t "an adjunct"
   let some parentPosStx := posTerm? u.pos | return false
   let some adjPosStx := posTerm? adjPos | return false
-  let (adjTarget, restTarget) := splitLeftAdjunctTarget u.target
-  let adjTargetStx := Syntax.mkStrLit adjTarget
-  let restTargetStx := Syntax.mkStrLit restTarget
+  let others := (← getGoals).drop 1
   evalTactic (← `(tactic|
-    refine
-      (fun adj : XSyntax.Utters .two $adjPosStx $adjTargetStx =>
-       fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
-        ⟨XTree.adjunctL adj.1 rest.1, by
-          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, adj.2, rest.2]⟩) ?_ ?_))
+    refine ⟨XTree.adjunctL
+              (?front : XSyntax.Utters .two $adjPosStx ?_).1
+              (?back : XSyntax.Utters .one $parentPosStx ?_).1, ?comb⟩))
+  installSplitLink u.target others
   return true
 
 private def tryTargetAdjoinR (t : Term) : TacticM Bool := do
@@ -322,15 +425,12 @@ private def tryTargetAdjoinR (t : Term) : TacticM Bool := do
   let adjPos ← declaredXPPos t "an adjunct"
   let some parentPosStx := posTerm? u.pos | return false
   let some adjPosStx := posTerm? adjPos | return false
-  let (restTarget, adjTarget) := splitRightAdjunctTarget u.target
-  let restTargetStx := Syntax.mkStrLit restTarget
-  let adjTargetStx := Syntax.mkStrLit adjTarget
+  let others := (← getGoals).drop 1
   evalTactic (← `(tactic|
-    refine
-      (fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
-       fun adj : XSyntax.Utters .two $adjPosStx $adjTargetStx =>
-        ⟨XTree.adjunctR rest.1 adj.1, by
-          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, rest.2, adj.2]⟩) ?_ ?_))
+    refine ⟨XTree.adjunctR
+              (?front : XSyntax.Utters .one $parentPosStx ?_).1
+              (?back : XSyntax.Utters .two $adjPosStx ?_).1, ?comb⟩))
+  installSplitLink u.target others
   return true
 
 private def tryTargetSpecifier (t : Term) : TacticM Bool := do
@@ -340,22 +440,21 @@ private def tryTargetSpecifier (t : Term) : TacticM Bool := do
   let specPos ← declaredXPPos t "a specifier"
   let some parentPosStx := posTerm? u.pos | return false
   let some specPosStx := posTerm? specPos | return false
-  let (specTarget, restTarget) := splitSpecifierTarget u.target
-  let specTargetStx := Syntax.mkStrLit specTarget
-  let restTargetStx := Syntax.mkStrLit restTarget
+  let others := (← getGoals).drop 1
   evalTactic (← `(tactic|
-    refine
-      (fun spec : XSyntax.Utters .two $specPosStx $specTargetStx =>
-       fun rest : XSyntax.Utters .one $parentPosStx $restTargetStx =>
-        ⟨XTree.Spec spec.1 rest.1, by
-          simp [XSyntax.Utters, XSyntax.yield, XSyntax.StrAdd, spec.2, rest.2]⟩) ?_ ?_))
+    refine ⟨XTree.Spec
+              (?front : XSyntax.Utters .two $specPosStx ?_).1
+              (?back : XSyntax.Utters .one $parentPosStx ?_).1, ?comb⟩))
+  installSplitLink u.target others
   return true
 
 /-! ### Player vocabulary -/
 
 /-- `XP → X′` (no specifier). Vacuous top projection, made explicit. -/
 elab "nospec" : tactic => do
-  if ← tryTargetNospec then return
+  if ← tryTargetNospec then
+    closeUtters
+    return
   enterUtters
   let t ← goalType
   match asXTree? t with
@@ -369,7 +468,9 @@ elab "nospec" : tactic => do
 
 /-- `X′ → X⁰` (no complement). Vacuous bar projection, made explicit. -/
 elab "nocomp" : tactic => do
-  if ← tryTargetNocomp then return
+  if ← tryTargetNocomp then
+    closeUtters
+    return
   enterUtters
   let t ← goalType
   match asXTree? t with
@@ -386,12 +487,15 @@ elab "head" w:str : tactic => do
   let word := w.getString
   if word != "" && hasWhitespace word then
     throwError "✗ head 一次只能种一个词；多个词必须各自占一个 head，空头才写 `head \"\"`"
-  if ← tryTargetHead w then return
+  if ← tryTargetHead w then
+    closeUtters
+    return
   enterUtters
   let t ← goalType
   match asXTree? t with
-  | some (b, _) =>
+  | some (b, pos) =>
     if b.isConstOf ``Bar.zero then
+      checkVocab word pos
       evalTactic (← `(tactic| exact XTree.word ⟨$w⟩))
     else
       throwError "✗ a bare head cannot stand at {t} — project it first (nocomp / nospec)"
@@ -400,7 +504,9 @@ elab "head" w:str : tactic => do
 
 /-- `XP → Spec X′`. Usage: `specifier DP` — declare the specifier. -/
 elab "specifier" t:term : tactic => do
-  if ← tryTargetSpecifier t then return
+  if ← tryTargetSpecifier t then
+    closeUtters
+    return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -417,7 +523,9 @@ elab "specifier" t:term : tactic => do
     Selection is checked here, at the moment of combination: an unlicensed
     pair makes this very command fail, in the licensing layer's own words. -/
 elab "complement" t:term : tactic => do
-  if ← tryTargetComplement t then return
+  if ← tryTargetComplement t then
+    closeUtters
+    return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -432,7 +540,9 @@ elab "complement" t:term : tactic => do
 
 /-- `X′ → Adjunct X′` (left adjunction). Usage: `adjoinL AP`. -/
 elab "adjoinL" t:term : tactic => do
-  if ← tryTargetAdjoinL t then return
+  if ← tryTargetAdjoinL t then
+    closeUtters
+    return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -447,7 +557,9 @@ elab "adjoinL" t:term : tactic => do
 
 /-- `X′ → X′ Adjunct` (right adjunction). Usage: `adjoinR AdvP`. -/
 elab "adjoinR" t:term : tactic => do
-  if ← tryTargetAdjoinR t then return
+  if ← tryTargetAdjoinR t then
+    closeUtters
+    return
   enterUtters
   let g ← goalType
   match asXTree? g with
@@ -460,12 +572,13 @@ elab "adjoinR" t:term : tactic => do
   | none => throwError "adjoinR: the goal is not a syntactic position"
   closeUtters
 
-/-- INTERNAL. Mirrors the licensing table in `Tree.lean` by hand: `Selects`
-    has exactly five constructors, so checking membership here — BEFORE
-    running `cases` — lets `cannotSelect` refuse in linguistics on an
-    actually-licensed pair instead of leaking Lean's generic "unsolved
-    goals" (which is what happens if `cases` is run first: it succeeds and
-    produces a real, un-closed goal rather than throwing). -/
+/-! ### Refutation (the eighth command) -/
+
+/-- INTERNAL. The licensing table in `Tree.lean`, mirrored by hand: `Selects`
+    has exactly these five constructors. Checking membership BEFORE running
+    `cases` lets `CannotSelect` refuse in linguistics on an actually-licensed
+    pair, rather than leaking Lean's generic "unsolved goals" (which is what a
+    bare `cases` leaves behind when the pair IS licensed). -/
 private def isLicensedPair (c d : Expr) : Bool :=
   (c.isConstOf ``Pos.D && d.isConstOf ``Pos.N) ||
   (c.isConstOf ``Pos.T && d.isConstOf ``Pos.V) ||
@@ -473,13 +586,11 @@ private def isLicensedPair (c d : Expr) : Bool :=
   (c.isConstOf ``Pos.P && d.isConstOf ``Pos.D) ||
   (c.isConstOf ``Pos.V && d.isConstOf ``Pos.D)
 
-/-- Eighth player command, added deliberately: prove a specific head-complement
-    pairing has NO license, on a goal of the form `¬ Selects c d`. Mechanism
-    mirrors `license!`: exhaust `Selects`'s constructors — none match an
+/-- Prove a head–complement pairing has NO license, on a goal `¬ Selects c d`.
+    Mirrors `license!`: exhaust `Selects`'s constructors — none match an
     unlicensed pair, so the case split closes the goal vacuously. If the pair
-    is actually licensed, refuse in the same linguistic register as every
-    other command, naming the two categories. -/
-elab "cannotSelect" : tactic => do
+    IS licensed, refuse in the same linguistic register as every other command. -/
+elab "CannotSelect" : tactic => do
   let t ← goalType
   if t.getAppFn.isConstOf ``Not && t.getAppArgs.size == 1 then
     let selectsTy := t.getAppArgs[0]!
@@ -491,8 +602,8 @@ elab "cannotSelect" : tactic => do
       else
         evalTactic (← `(tactic| intro h; cases h))
     else
-      throwError "cannotSelect: 目标不是一个「¬ Selects _ _」形式的否定许可命题"
+      throwError "CannotSelect: 目标不是一个「¬ Selects _ _」形式的否定许可命题"
   else
-    throwError "cannotSelect: 目标不是一个否定命题"
+    throwError "CannotSelect: 目标不是一个否定命题"
 
 end XSyntax
