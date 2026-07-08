@@ -1,9 +1,12 @@
 import Game.Metadata
+import XSyntax.TreeWidget
 
 World "PhraseII"
 Level 4
 
 Title "Colorless green ideas sleep furiously"
+
+show_panel_widgets [local XSyntax.xTreeGrowthWidget]
 
 Introduction "
 终关:Chomsky 1957 年那句著名的话——语义荒谬,句法完美。
