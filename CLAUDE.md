@@ -8,14 +8,22 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 
 - `XSyntax/` — 理论库(游戏无关,也用于 VS Code 投屏走稿)
   - `Basic.lean` — `Pos`(九范畴)、`StrAdd`、参数化 `LexicalEntry (c : Pos)`
-  - `Tree.lean` — `Bar` 索引、`Selects`(许可表,inductive Prop)、
-    `XTree : Bar → Pos → Type`(双索引族;`compl` 携带 `Selects c d` 许可证)
+  - `Tree.lean` — `Bar` 索引、`Selects`(选择许可表,inductive Prop)、
+    `Lexicon : Pos → String → Prop`(词库许可,**空 inductive**;词性事实由关卡当
+    假设发)、`XTree : Bar → Pos → Type`(双索引族;`compl` 携带 `Selects c d`、
+    `word` 携带 `Lexicon c e.word` 许可证)
   - `Operations.lean` — `cat`/`bar`(O(1) 投影)、`Head`/`yield`/`plot`
   - `TypeNotation.lean` — 27 条短语类型记法(`NP`/`N′`/`N⁰`…)+ 9 条裸范畴
     显示记法(`D` = `Pos.D`)。注意:这些是**全局保留 token**,见「地雷」。
   - `Tactics.lean` — 玩家指令集(elab):`nospec nocomp head complement
-    adjoinL adjoinR specifier`;内部件 `license!`(选择违规的语言学化报错)
-  - `Playground.lean` — VS Code 走稿 + 回归钉(`#guard`)
+    adjoinL adjoinR specifier`;内部件 `license!`(选择违规报错)、`lexicon!`
+    (词性违规报错,从关卡假设取证);关卡目标类型 `Parses`(旧名 `Utters`,已改)
+  - `Display.lean` — print 侧翻译层:`delabParses`/`delabXTree`(短语记法 token,
+    去 `«»`)、`delabLexicon`(`Lexicon .N "cat"` → `N ： "cat"`,空头 `∅`)
+  - `TreeView.lean` — 小绿的活树状态标记(`register_option
+    XSyntax.treeView.enabled`,**关卡里默认 false**;需前端 fork 才渲染 SVG)
+  - `Playground.lean` — VS Code 走稿;因全局纯净,用**本文件私有** dev 公理
+    `devLexicon` + `assumeEnglish` 战术喂词库,保住闭合 `#eval`(游戏与理论核心都不 import)
 - `Game/` — lean4game 关卡层
   - `Metadata.lean` — TacticDoc ×7 + DefinitionDoc ×9(短语类型词汇)
   - `Levels/XBar/L01–L05` — 五关:中心语→空洞投射→补足语与选择→附加语→colorless 全句
@@ -26,16 +34,21 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 
 1. **玩家视野里只有语言学。** parse 侧(玩家输入)、print 侧(目标面板)、
    error 侧(报错)三个方向都必须说语言学,不说 Lean。任何新功能按此验收。
-2. **Church 式:不合法结构不可表达。** 几何违规由 Bar/Pos 索引拦截;
-   选择违规由 `Selects` 许可证拦截(无居民 = 不合语法)。
+2. **Church 式:不合法结构不可表达(三连)。** 几何违规由 Bar/Pos 索引拦截;
+   选择违规由 `Selects` 许可证拦截(无居民 = 不合语法);**词性违规由 `Lexicon`
+   许可证拦截**。区别:`Selects` 是普遍语法(写死构造子),`Lexicon` 是个别语言的
+   (空 inductive,词性事实由每关当**已知条件**发给玩家)。故空上下文里造不出任何
+   词树 = 语法性永远相对于给定词库,`head` 用 `lexicon!` 从关卡假设取许可。
 3. **选择在合并处检查**(对应理论中 subcategorization 在 Merge 时满足):
    `complement` 内嵌 `(by license!)` 当场求值,没有事后的 license 步骤。
 4. **玩家词汇表固定七条**,全部对应 X-bar 规则;`tree`/`pronounce` 已废除。
-5. 空头 = `head ""`(发音为空的普通词条),不设独立构造子。
+5. 空头 = `head ""` 或 `head "∅"`(都归一成空串),不设独立构造子;许可来自
+   关卡发的 `Lexicon .C ""`/`.T ""`/`.D ""`(显示成 `∅`)。
 6. 诊断分层靠「不 catch」:外层 elab 预检层级/宣告,内层 `license!` 的
    异常原文上浮,互不吞话。
-7. `Utters` 目标不只核验整句 yield,也会把目标字符串分配给子目标,
-   让玩家看到 `D⁰ ： "my"`、`NP ： "house"` 这类「片段 + 词性」目标。
+7. `Parses` 目标(旧名 `Utters`)不只核验整句 yield,也会把目标字符串分配给子目标,
+   让玩家看到 `D⁰ ： "my"`、`NP ： "house"` 这类「片段 + 词性」目标。关卡把本关
+   词库当 `Lexicon` 假设 binder 发下来,玩家在假设区看到 `my : D ： "my"` 这排词汇。
 
 ## 构建・验证・部署流水线
 
@@ -78,6 +91,12 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
    里玩才能验(Windows 本地起不了前端,见地雷 5)。改动关卡/tactic/delaborator
    后,务必提示维护者实机试玩,别把"CI 绿"当成"能玩"。
 
+9. **目标类型被 `mdata` 包裹**:`have`、以及 lean4game **自动 intro 关卡假设
+   binder**,都会给目标类型套一层 `Expr.mdata`,使 `getAppFn` 返回包裹层、
+   `isConstOf ``XTree``/``Parses`` 认不出 → tactic 报"不是句法位置"。**读目标处一律
+   `consumeMData`**(`goalType`/`asXTree?`/`asParses?`/`closeParses`/`installSplitLink`
+   已修)。关卡一旦带 `Lexicon` 假设 binder,这条是必修,否则每关开局就崩。
+
 ## 当前头号任务:无(上一个已完成)
 
 `Display.lean`(print 侧翻译层)已落地并验证:`XSyntax/Display.lean` 提供
@@ -87,8 +106,9 @@ https://adam.math.hhu.de/#/g/scpsyche123/syntax-game
 
 ## 挂账中的债务(未排期,动工前先与维护者讨论)
 
-- 词库门禁:`head` 不查词库,任何词可在任何 X⁰ 落地("sleeps" 可当名词)。
-  修复需把 `Lexicon` 引入构造侧,是设计决定,勿擅动。
+- ~~词库门禁~~ **已完成(2026-07-08,方案 B)**:`Lexicon` 进构造子,`head` 用
+  `lexicon!` 从关卡假设取证。stage-2「玩家自己定义词性」(需 `define` 战术当场铸
+  `Lexicon` 假设)是后续「词库世界」的事——铸造口一开全局纯净就破,机制待单独定夺。
 - `Selects` 是范畴粒度:拦 *the sleeps*,不拦 *sleep the cat*(不及物性
   是词项特征)。债主:LexicalEntry 上的 feature 系统。
 - X′ 出现在宣告位时的报错来自门禁("not available"),措辞不语言学;
