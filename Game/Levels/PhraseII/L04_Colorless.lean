@@ -1,12 +1,9 @@
 import Game.Metadata
-import XSyntax.TreeWidget
 
 World "PhraseII"
 Level 4
 
 Title "Colorless green ideas sleep furiously"
-
-show_panel_widgets [XSyntax.xTreeGrowthWidget]
 
 Introduction "
 终关:Chomsky 1957 年那句著名的话——语义荒谬,句法完美。
@@ -26,33 +23,185 @@ Introduction "
 
 /-- 为 *Colorless green ideas sleep furiously* 建一棵完整的 CP。 -/
 Statement : XSyntax.Utters .two .C "Colorless green ideas sleep furiously" := by
-  Hint "最外层是 CP:`nospec`,然后 C 选择什么?"
+  Hint "🌱 树根先在最上面:
+```text
+                         CP
+```
+最外层是 CP:`nospec`,然后 C 选择什么?"
   nospec
+  Hint "🌱 CP 长出 C′:
+```text
+                         CP
+                         │
+                         C′
+```"
   complement TP
+  Hint "🌱 C′ 分成空 C 和 TP:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+```"
   head ""
+  Hint "🌱 空 C 已经种下:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅
+```"
   Hint "TP 带主语:`specifier DP`。"
   specifier DP
+  Hint "🌱 TP 长出主语 DP 和 T′:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+```"
   Hint "先搭主语 DP:空 D 选 NP,NP 里两个 AP 左附接。"
   nospec
+  Hint "🌱 主语 DP 先降到 D′:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │
+                          D′
+```"
   complement NP
+  Hint "🌱 D′ 分成空 D 和 NP:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │
+                          D′
+                     ┌────┴────┐
+                     D⁰        NP
+```"
   head ""
   nospec
   adjoinL AP
+  Hint "🌱 NP 左边长出第一个 AP，右边保留 N′:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │
+                          D′
+                     ┌────┴────┐
+                     D⁰        NP
+                     ∅         │
+                               N′
+                          ┌────┴────┐
+                          AP        N′
+```"
   nospec
   nocomp
   head "Colorless"
   adjoinL AP
+  Hint "🌱 第二个 AP 继续左附接，旧节点位置不动:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │
+                          D′
+                     ┌────┴────┐
+                     D⁰        NP
+                     ∅         │
+                               N′
+                          ┌────┴────┐
+                          AP        N′
+                     Colorless ┌────┴────┐
+                               AP        N′
+```"
   nospec
   nocomp
   head "green"
   nocomp
   head "ideas"
+  Hint "🌱 主语 DP 完成了:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │
+                          D′
+                     ┌────┴────┐
+                     D⁰        NP
+                     ∅         │
+                               N′
+                          ┌────┴────┐
+                          AP        N′
+                     Colorless ┌────┴────┐
+                               AP        N′
+                              green      N⁰
+                                         ideas
+```"
   Hint "主语完工。现在是 `T′`:空 T 选择 VP。"
   complement VP
+  Hint "🌱 T′ 分成空 T 和 VP:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │    ┌────┴────┐
+                         ...   T⁰        VP
+                               ∅
+```"
   head ""
   Hint "VP 内部:*furiously* 右附接在 V′ 上,先 `adjoinR AdvP` 再种 *sleep*。"
   nospec
   adjoinR AdvP
+  Hint "🌱 VP 里，AdvP 从右边接到 V′:
+```text
+                         CP
+                         │
+                         C′
+                    ┌────┴────┐
+                    C⁰        TP
+                    ∅     ┌────┴────┐
+                          DP        T′
+                          │    ┌────┴────┐
+                         ...   T⁰        VP
+                               ∅         │
+                                         V′
+                                    ┌────┴────┐
+                                    V′       AdvP
+```"
   nocomp
   head "sleep"
   nospec
