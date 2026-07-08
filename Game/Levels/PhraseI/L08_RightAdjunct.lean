@@ -39,7 +39,7 @@ Conclusion "
 
 你现在能独立操作全部六条**短语内部**指令——`nospec`、`nocomp`、`head`、
 `complement`、`adjoinL`、`adjoinR`——分得清补足语和附加语,还亲手证明过一次
-不合法的选择根本不存在(`cannotSelect`)。
+不合法的选择根本不存在(`CannotSelect`)。
 
 到目前为止,你搭的都是**短语**(NP、DP、VP……)。但短语怎么组成**句子**?
 下一个世界「Phrase II」,你会认识两个撑起整句的功能中心语:T(时态)和 C(标句),

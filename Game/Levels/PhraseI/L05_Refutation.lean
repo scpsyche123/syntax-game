@@ -16,15 +16,15 @@ Introduction "
 先做个实验(不计分,随便试):去 Playground 或上一关的 `V′` 目标上,
 输入 `complement VP` 试试把一个 D 接到 V 上,读一读系统怎么拒绝你。
 
-这一关不搭树——**证明**这样的许可证根本不存在。新规则 `cannotSelect`:
+这一关不搭树——**证明**这样的许可证根本不存在。新规则 `CannotSelect`:
 在一个「¬ Selects c d」(c 不选择 d)的目标上,穷尽选择表里的每一条许可,
-一条都不匹配,证明就成立。如果这对组合其实合法,`cannotSelect` 会拒绝你,
+一条都不匹配,证明就成立。如果这对组合其实合法,`CannotSelect` 会拒绝你,
 和 `complement` 拒绝非法搭配时用的是同一套语言。
 "
 
 /-- 证明 D 不选择 V——*the sleep* 这类病句背后的结构原因。 -/
 Statement : ¬ XSyntax.Selects .D .V := by
-  cannotSelect
+  CannotSelect
 
 Conclusion "
 证明完毕:D 不选择 V。
@@ -35,4 +35,4 @@ Conclusion "
 许可证不存在」的证明。**两句话,同一个硬币的两面。
 "
 
-NewTactic cannotSelect
+NewTactic CannotSelect
