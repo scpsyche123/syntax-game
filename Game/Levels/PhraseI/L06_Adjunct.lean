@@ -23,7 +23,9 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *my big house* 建一个 DP。 -/
-Statement : XSyntax.Utters .two .D "my big house" := by
+Statement (my : XSyntax.Lexicon .D "my") (big : XSyntax.Lexicon .A "big")
+    (house : XSyntax.Lexicon .N "house") :
+    XSyntax.Parses .two .D "my big house" := by
   Hint "老三步开头:`nospec`,然后 D 选 NP —— `complement NP`。"
   nospec
   complement NP

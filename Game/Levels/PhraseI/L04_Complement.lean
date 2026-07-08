@@ -27,7 +27,9 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *sees the cat* 建一个 VP。 -/
-Statement : XSyntax.Utters .two .V "sees the cat" := by
+Statement (sees : XSyntax.Lexicon .V "sees") (the : XSyntax.Lexicon .D "the")
+    (cat : XSyntax.Lexicon .N "cat") :
+    XSyntax.Parses .two .V "sees the cat" := by
   Hint "`nospec` 开顶:VP 拆到 V′。"
   nospec
   Hint "现在在 `V′`。想试非法搭配就是此刻:`complement AP`。正路是 `complement DP`。"

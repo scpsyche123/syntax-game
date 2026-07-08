@@ -16,7 +16,8 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为词 *ideas* 建一个名词中心语 N⁰。 -/
-Statement : XSyntax.Utters .zero .N "ideas" := by
+Statement (ideas : XSyntax.Lexicon .N "ideas") :
+    XSyntax.Parses .zero .N "ideas" := by
   Hint "输入 `head \"ideas\"`(引号是指令的一部分)。"
   head "ideas"
 

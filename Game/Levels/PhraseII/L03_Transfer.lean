@@ -22,7 +22,11 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *the big dog sees the cat* 建一个完整的 CP。自己组装。 -/
-Statement : XSyntax.Utters .two .C "the big dog sees the cat" := by
+Statement (the : XSyntax.Lexicon .D "the") (big : XSyntax.Lexicon .A "big")
+    (dog : XSyntax.Lexicon .N "dog") (sees : XSyntax.Lexicon .V "sees")
+    (cat : XSyntax.Lexicon .N "cat")
+    (nullC : XSyntax.Lexicon .C "") (nullT : XSyntax.Lexicon .T "") :
+    XSyntax.Parses .two .C "the big dog sees the cat" := by
   Hint "CP 外壳:`nospec` → `complement TP` → 空 C `head \"\"`。"
   nospec
   complement TP

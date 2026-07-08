@@ -11,12 +11,48 @@ import XSyntax.Tactics
 
 namespace XSyntax
 
+/-! ## Walkthrough lexicon
+
+    `Lexicon` is empty globally (Church purity: no free-floating word-trees), so
+    a tree only exists relative to a GIVEN lexicon. The game hands each level its
+    lexicon as hypotheses; this walkthrough does the same via `assumeEnglish`,
+    which drops the English lexicon into the local context before a scene builds.
+    `devLexicon` is a DEV-ONLY stipulation, confined to this file — the theory
+    core and the game never import it, so their purity is untouched. It sits in a
+    Prop (erased) position, so `#eval yield/plot` still compute. -/
+
+private axiom devLexicon {c : Pos} {w : String} : Lexicon c w
+
+local macro "assumeEnglish" : tactic =>
+  `(tactic|
+    ( have : Lexicon .D "the"       := devLexicon
+      have : Lexicon .D "my"        := devLexicon
+      have : Lexicon .D "hers"      := devLexicon
+      have : Lexicon .N "ideas"     := devLexicon
+      have : Lexicon .N "cat"       := devLexicon
+      have : Lexicon .N "house"     := devLexicon
+      have : Lexicon .N "dog"       := devLexicon
+      have : Lexicon .N "cats"      := devLexicon
+      have : Lexicon .V "sees"      := devLexicon
+      have : Lexicon .V "sleep"     := devLexicon
+      have : Lexicon .A "big"       := devLexicon
+      have : Lexicon .A "strange"   := devLexicon
+      have : Lexicon .A "green"     := devLexicon
+      have : Lexicon .A "Colorless" := devLexicon
+      have : Lexicon .Adv "quickly"   := devLexicon
+      have : Lexicon .Adv "furiously" := devLexicon
+      have : Lexicon .T "will"      := devLexicon
+      have : Lexicon .C ""          := devLexicon
+      have : Lexicon .T ""          := devLexicon
+      have : Lexicon .D ""          := devLexicon ))
+
 /-! ## Scene 1 · Warm-up: a bare noun phrase, three keystrokes
 
     Every projection is an explicit move. `head` alone cannot close an
     `NP` goal — the audience watches the levels get climbed. -/
 
 example : NP := by
+  assumeEnglish
   nospec              -- ⊢ N′
   nocomp              -- ⊢ N⁰
   head "ideas"        -- 🎉
@@ -29,6 +65,7 @@ example : NP := by
     the tree, and two goals remain. -/
 
 def my_big_house : DP := by
+  assumeEnglish
   nospec              -- ⊢ D′
   complement NP       -- ⊢ D⁰   ⊢ NP     (license checked & filed)
   head "my"           -- ⊢ NP
@@ -75,6 +112,7 @@ def my_big_house : DP := by
     is the tree just built. -/
 
 def colorless_tree : CP := by
+  assumeEnglish
   -- the CP shell
   nospec                  -- ⊢ C′
   complement TP           -- ⊢ C⁰   ⊢ TP        (C–T license filed)

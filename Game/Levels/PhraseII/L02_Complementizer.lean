@@ -23,7 +23,9 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *cats sleep* 建一个完整的 CP(空 C、空 T)。 -/
-Statement : XSyntax.Utters .two .C "cats sleep" := by
+Statement (cats : XSyntax.Lexicon .N "cats") (sleep : XSyntax.Lexicon .V "sleep")
+    (nullC : XSyntax.Lexicon .C "") (nullT : XSyntax.Lexicon .T "") :
+    XSyntax.Parses .two .C "cats sleep" := by
   Hint "最外层是 CP:`nospec` 到 C′,然后 C 选 TP —— `complement TP`。"
   nospec
   complement TP

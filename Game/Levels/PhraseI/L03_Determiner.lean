@@ -21,7 +21,8 @@ X-bar 理论对虚词和实词一视同仁:限定词照样是一个范畴的头,
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *hers* 建一个完整的 DP。 -/
-Statement : XSyntax.Utters .two .D "hers" := by
+Statement (hers : XSyntax.Lexicon .D "hers") :
+    XSyntax.Parses .two .D "hers" := by
   Hint "还是老三步:`nospec` 把 DP 拆到 D′。"
   nospec
   Hint "`nocomp` 拆到中心语层 D⁰。"

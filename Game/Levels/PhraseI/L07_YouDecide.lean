@@ -23,7 +23,9 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *the strange dog* 建一个 DP。自己判断补足语 vs 附加语。 -/
-Statement : XSyntax.Utters .two .D "the strange dog" := by
+Statement (the : XSyntax.Lexicon .D "the") (strange : XSyntax.Lexicon .A "strange")
+    (dog : XSyntax.Lexicon .N "dog") :
+    XSyntax.Parses .two .D "the strange dog" := by
   nospec
   complement NP
   head "the"

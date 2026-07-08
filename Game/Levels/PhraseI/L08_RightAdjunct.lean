@@ -23,7 +23,8 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *sleep quickly* 建一个 VP。 -/
-Statement : XSyntax.Utters .two .V "sleep quickly" := by
+Statement (sleep : XSyntax.Lexicon .V "sleep") (quickly : XSyntax.Lexicon .Adv "quickly") :
+    XSyntax.Parses .two .V "sleep quickly" := by
   Hint "`nospec` 开顶到 V′。"
   nospec
   Hint "*quickly* 在 V′ 右侧:`adjoinR AdvP`。会开出 V′ 和 AdvP 两个目标。"

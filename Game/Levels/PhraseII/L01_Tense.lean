@@ -27,7 +27,9 @@ T 选择一个 VP 作补足语(*will* 底下是 *sleep*)。而**主语** *cats* 
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *cats will sleep* 建一个 TP。 -/
-Statement : XSyntax.Utters .two .T "cats will sleep" := by
+Statement (cats : XSyntax.Lexicon .N "cats") (will : XSyntax.Lexicon .T "will")
+    (sleep : XSyntax.Lexicon .V "sleep") :
+    XSyntax.Parses .two .T "cats will sleep" := by
   Hint "整句是 TP,带主语:`specifier NP`。会开出主语 NP 和 T′ 两个目标。"
   specifier NP
   Hint "先搭主语 *cats*(一个 NP):`nospec` / `nocomp` / `head \"cats\"`。"

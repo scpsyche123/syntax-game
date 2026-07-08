@@ -24,7 +24,11 @@ Introduction "
 set_option XSyntax.treeView.enabled false
 
 /-- 为 *Colorless green ideas sleep furiously* 建一棵完整的 CP。 -/
-Statement : XSyntax.Utters .two .C "Colorless green ideas sleep furiously" := by
+Statement (Colorless : XSyntax.Lexicon .A "Colorless") (green : XSyntax.Lexicon .A "green")
+    (ideas : XSyntax.Lexicon .N "ideas") (sleep : XSyntax.Lexicon .V "sleep")
+    (furiously : XSyntax.Lexicon .Adv "furiously")
+    (nullC : XSyntax.Lexicon .C "") (nullD : XSyntax.Lexicon .D "") (nullT : XSyntax.Lexicon .T "") :
+    XSyntax.Parses .two .C "Colorless green ideas sleep furiously" := by
   Hint "最外层是 CP:`nospec`,然后 C 选择什么?"
   nospec
   complement TP

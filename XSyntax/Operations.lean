@@ -23,7 +23,7 @@ def bar {b : Bar} {c : Pos} (_ : XTree b c) : Bar := b
 
 /-- The head a tree projects from. The return type states endocentricity. -/
 def Head : XTree b c → LexicalEntry c
-  | .word BP        => BP
+  | .word BP _      => BP
   | .adjunctL _ pp  => Head pp
   | .adjunctR pp _  => Head pp
   | .compl pp _ _   => Head pp
@@ -31,9 +31,9 @@ def Head : XTree b c → LexicalEntry c
   | .bareX1 pp      => Head pp
   | .Spec _ pp      => Head pp
 
-/-- The surface string. The license in `compl` is discarded with `_`. -/
+/-- The surface string. The licenses in `word`/`compl` are discarded with `_`. -/
 def yield : XTree b c → String
-  | .word BP        => BP.word
+  | .word BP _      => BP.word
   | .adjunctL x2 x1 => StrAdd (yield x2) (yield x1)
   | .adjunctR x1 x2 => StrAdd (yield x1) (yield x2)
   | .compl x0 x2 _  => StrAdd (yield x0) (yield x2)
@@ -43,7 +43,7 @@ def yield : XTree b c → String
 
 /-- Labelled bracketing. Where a label is needed, we just ask `cat`. -/
 def plot : XTree b c → String
-  | .word BP        => BP.word
+  | .word BP _      => BP.word
   | .adjunctL x2 x1 => StrAdd (plot x2) (plot x1)
   | .adjunctR x1 x2 => StrAdd (plot x1) (plot x2)
   | .compl x0 x2 _  => StrAdd (plot x0) (plot x2)
