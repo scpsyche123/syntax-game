@@ -6,10 +6,7 @@ even after the notation pretty-printer has missed them. It works at the
 expression level, so it is not confused by the separate notation that prints
 `Pos.C` as `C`.
 
-Three exports:
-* `goalColon` — the display-only `<label> ： <string>` notation shared by the
-  level-goal delaborator (`Parses`, in `Tactics.lean`) and the lexicon
-  delaborator below.
+Two exports:
 * `xTreeLabel?` — maps `(bar, pos)` to the ACTUAL phrase-type notation token
   (`` `(DP) ``, `` `(N′) ``…). Emitting the notation, not `mkIdent "DP"`, is what
   keeps the panel showing a clean `DP` instead of the escaped `«DP»` (`DP` is a
@@ -24,11 +21,6 @@ open Lean
 open PrettyPrinter.Delaborator SubExpr
 
 namespace XSyntax
-
-/-- Display-only: `<label> ： <string>`, e.g. `DP ： "my house"` or `N ： "cat"`.
-    Never parsed from source (`:max`, fullwidth colon). Shared so both the goal
-    delaborator and the lexicon delaborator render through one notation. -/
-syntax:max (name := goalColon) term:max " ： " str : term
 
 private def posBase? (e : Expr) : Option String :=
   if      e.isConstOf ``Pos.N    then some "N"
@@ -90,10 +82,11 @@ def delabXTree : Delab := do
   let some stx ← xTreeLabel? (e.getArg! 0) (e.getArg! 1) | failure
   pure stx
 
-/-- Print a lexicon hypothesis `Lexicon .N "cat"` as `N ： "cat"` (`C ： "∅"`
+/-- Print a lexicon hypothesis `Lexicon .N "cat"` as `("cat" : N)` (`("∅" : C)`
     for a null head), so the given vocabulary reads linguistically in the
-    assumptions panel. The category is delaborated from the argument (so the
-    bare-category notation renders it `N`, not `Pos.N`). -/
+    assumptions panel. Built as a plain type-ascription (ASCII colon) — the
+    category is delaborated from the argument so the bare-category notation
+    renders it `N`, not `Pos.N`. -/
 @[delab app.XSyntax.Lexicon]
 def delabLexicon : Delab := do
   let e ← getExpr
@@ -103,7 +96,7 @@ def delabLexicon : Delab := do
   match e.getArg! 1 with
   | .lit (.strVal s) =>
     let shown := if s == "" then "∅" else s
-    `($catStx ： $(Syntax.mkStrLit shown))
+    `(($(Syntax.mkStrLit shown) : $catStx))
   | _ => failure
 
 end XSyntax

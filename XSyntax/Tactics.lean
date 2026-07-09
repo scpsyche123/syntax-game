@@ -18,7 +18,7 @@ other child's surface string. The instant the player commits the reference
 child (e.g. `head "my"` at the D⁰), `closeParses` reduces that child's yield
 to a literal, subtracts it from the parent span IN META CODE (compiled
 `residual`, never the kernel), and pins the sibling's target. So the panel
-shows `NP ： "house"` only as a CONSEQUENCE of the player's own choice — the
+shows `NP : "house"` only as a CONSEQUENCE of the player's own choice — the
 boundary is never handed to them.
 
 v5 (immediate feedback, 小红): a wrong commit no longer waits for the final
@@ -267,7 +267,7 @@ private def closeParses : TacticM Unit :=
             | some said =>
               if rhs.isMVar then
                 -- Open target (a `?_` placeholder): pin it to the tree's yield
-                -- so the panel shows `D⁰ ： "my"`, then close.
+                -- so the panel shows `D⁰ : "my"`, then close.
                 rhs.mvarId!.assign (toExpr said)
                 mvarId.assign (← mkEqRefl (toExpr said))
               else
@@ -280,11 +280,11 @@ private def closeParses : TacticM Unit :=
 private def hasWhitespace (s : String) : Bool :=
   s.any (fun c => c.isWhitespace)
 
-/-! Display a `Parses` goal as e.g. `DP ： "my house"`. The label comes from
-    `xTreeLabel?` (the real phrase-type notation token, so `DP` prints clean, not
-    `«DP»`) and the `： ` notation is `goalColon` from `Display`. A still-undecided
-    target (a metavariable, before the player's commitment resolves it) shows the
-    bare category label alone. -/
+/-! Display a `Parses` goal as e.g. `("my house" : DP)`, a plain type-ascription
+    (ASCII colon). The label comes from `xTreeLabel?` (the real phrase-type
+    notation token, so `DP` prints clean, not `«DP»`). A still-undecided target
+    (a metavariable, before the player's commitment resolves it) shows the bare
+    category label alone. -/
 
 open PrettyPrinter.Delaborator SubExpr in
 @[delab app.XSyntax.Parses]
@@ -293,7 +293,7 @@ def delabParses : Delab := do
   guard (e.getAppNumArgs == 3)
   let some catStx ← xTreeLabel? (e.getArg! 0) (e.getArg! 1) | failure
   match e.getArg! 2 with
-  | .lit (.strVal str) => `($catStx ： $(Syntax.mkStrLit str))
+  | .lit (.strVal str) => `(($(Syntax.mkStrLit str) : $catStx))
   | _                  => pure catStx
 
 private def tryTargetNospec : TacticM Bool := do
