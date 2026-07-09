@@ -280,11 +280,11 @@ private def closeParses : TacticM Unit :=
 private def hasWhitespace (s : String) : Bool :=
   s.any (fun c => c.isWhitespace)
 
-/-! Display a `Parses` goal as e.g. `("my house" : DP)`, a plain type-ascription
-    (ASCII colon). The label comes from `xTreeLabel?` (the real phrase-type
-    notation token, so `DP` prints clean, not `«DP»`). A still-undecided target
-    (a metavariable, before the player's commitment resolves it) shows the bare
-    category label alone. -/
+/-! Display a `Parses` goal as e.g. `"my house" [DP]` — the target string next to
+    its bracketed category (house style: `plot` emits `[ɴᴘ …]`). The label comes
+    from `xTreeLabel?` (the real phrase-type notation token, so `DP` prints clean,
+    not `«DP»`). A still-undecided target (a metavariable, before the player's
+    commitment resolves it) shows the bracketed category alone. -/
 
 open PrettyPrinter.Delaborator SubExpr in
 @[delab app.XSyntax.Parses]
@@ -293,8 +293,8 @@ def delabParses : Delab := do
   guard (e.getAppNumArgs == 3)
   let some catStx ← xTreeLabel? (e.getArg! 0) (e.getArg! 1) | failure
   match e.getArg! 2 with
-  | .lit (.strVal str) => `(($(Syntax.mkStrLit str) : $catStx))
-  | _                  => pure catStx
+  | .lit (.strVal str) => `($(Syntax.mkStrLit str) [$catStx])
+  | _                  => `([$catStx])
 
 private def tryTargetNospec : TacticM Bool := do
   let some u := asParses? (← goalType) | return false

@@ -82,21 +82,17 @@ def delabXTree : Delab := do
   let some stx ← xTreeLabel? (e.getArg! 0) (e.getArg! 1) | failure
   pure stx
 
-/-- Print a lexicon hypothesis `Lexicon .N "cat"` as `("cat" : N)` (`("∅" : C)`
-    for a null head), so the given vocabulary reads linguistically in the
-    assumptions panel. Built as a plain type-ascription (ASCII colon) — the
-    category is delaborated from the argument so the bare-category notation
-    renders it `N`, not `Pos.N`. -/
+/-- Print a lexicon hypothesis `Lexicon .N "cat"` as `[N]`. The WORD itself is
+    the hypothesis name, so the panel reads `cat : [N]` — the type only carries
+    the bracketed category. Brackets match this project's labelled-bracketing
+    house style (`plot` emits `[ɴᴘ …]`). The category is delaborated from the
+    argument so the bare-category notation renders it `N`, not `Pos.N`. -/
 @[delab app.XSyntax.Lexicon]
 def delabLexicon : Delab := do
   let e ← getExpr
   guard (e.getAppNumArgs == 2)
   let some _ := posBase? (e.getArg! 0) | failure
   let catStx ← withNaryArg 0 delab
-  match e.getArg! 1 with
-  | .lit (.strVal s) =>
-    let shown := if s == "" then "∅" else s
-    `(($(Syntax.mkStrLit shown) : $catStx))
-  | _ => failure
+  `([$catStx])
 
 end XSyntax
