@@ -87,5 +87,9 @@ package Game where
 
 lean_lib XSyntax
 
+-- Bare Grammar rebase — additive, isolated from v1 (branch `bg-base-slice`).
+-- Placed BEFORE `@[default_target]` so it does not steal it (landmine 2).
+lean_lib BareSyntax
+
 @[default_target]
 lean_lib Game
