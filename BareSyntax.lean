@@ -2,3 +2,4 @@
 import BareSyntax.Basic
 import BareSyntax.Smoke
 import BareSyntax.Linear
+import BareSyntax.Flat

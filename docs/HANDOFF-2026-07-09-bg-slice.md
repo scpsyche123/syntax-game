@@ -7,7 +7,14 @@ For: 小姜(派单 claude-code-brief-bg-slice.md)/ 小红(集成:review + build 
 
 **必交件全部完成,lake build 通过,v1 未动,无 sorry。不 push(等小红)。**
 
-## 交付
+## v2 undergeneration 系统(第一单,最新)
+`BareSyntax/Flat.lean` — 按 v2 spec(`Syntax-Game-Undergeneration-Construction-Spec.md` §2/§14.1/§17.1):
+- **语义审计**:当前 `Deriv` 是**递归槽**(N 槽填任意子树 ⇒ 无限语言);v2 要 **flat**(每槽一词,`linear₁` = 有限模板集)。递归那套不删(W3 料)。
+- **flat 层**(方案 A,拆分关系):`FlatTemplate`/`FlatGrammar`/`FlatLicensed`/`CanYieldFlat`;§8 词汇歧义口子已留(词库 `List (String × Cat)` 允许一词多类)。
+- **expand/close 首关**(长度失配 `a house good room`):玩家工具 `suppose`/`expand`/`close length`(elab tactic)。**红线达标**:`close length` 只核对玩家申报的长度失配,长度相等时**报错拒绝**(实测)。`deadYield` 退化为 `cut no_adv` 后端。
+- REPORT 新增 §v2-A/B/C:审计结论、flat 设计(A vs B + 摩擦)、首关玩家步数逐步标注(3 判断 + 藏掉的 Lean 杂活)。报错人话化、expand 通用化是记账的战术层待办。
+
+## 交付(初版,仍有效)
 - `BareSyntax/Basic.lean` — 基底:`Expr` / `Rule`(定义域 `posCat` 为显式数据)/ `BareGrammar` / `applyRule`(由数据派生)/ 互归纳 `Deriv`+`DerivList` / `CanYield`。
 - `BareSyntax/Smoke.lean` — 正向冒烟 `smoke : CanYield toyG ⟨the ideas⟩ N`。
 - `BareSyntax/Linear.lean` — `linear₁` + 三条路线:`route_A`(死范畴引理 `noVery` + 可判定表检)、`route_B`(裸反演 + `derivDA`)、Route C(可行性注释:延后到"生成可判定"里程碑)。

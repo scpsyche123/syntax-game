@@ -1,10 +1,53 @@
 # Bare Grammar 基底 + CannotYield 垂直切片 — 报告
 
 **分支** `bg-base-slice` · **昵称** 小蓝 · **日期** 2026-07-09
-**执行施工单** `claude-code-brief-bg-slice.md`(+ 维护者对路线 A 的重做裁决)
-**lake build** 通过(v1 未动;`lake build BareSyntax` 6 jobs;无 `sorry`)
+**施工单**:`claude-code-brief-bg-slice.md`(初版)+ 路线 A 重做裁决 + **v2 undergeneration spec 第一单**(`Syntax-Game-Undergeneration-Construction-Spec.md`,§2/§14.1/§17.1)
+**lake build** 通过(v1 未动 63 jobs;`lake build BareSyntax` 7 jobs;无 `sorry`)
 
-一句话结论:**否定证明可玩,前提是把"死范畴"论证拆成玩家逐步亲历的句法判断**,而不是一个替玩家把整表扫完、直接下结论的"神键"。路线 A 已按此**重做**:玩家亲手逐条核规则,自定义 tactic 只藏 Lean 杂活。路线 B(裸反演)是反面对照。
+一句话结论:v2 把所有"无法生成"统一成 **expand/close/cut/reuse** 反驳演算;本单交**语义审计 + flat 层 + expand/close 首关(长度失配)**。旧的路线 A/B/C(下方 §0–§5)在 v2 里的位置:`deadYield` 退化为 `cut no_adv` 的后端,路线 B 是"裸反演"反面对照。神键禁令一脉延续到 v2:自动化只**核对**玩家申报,玩家负责**解释**。
+
+---
+
+## v2-A. 语义审计(spec §2 / §17.1)
+
+**结论:当前基底是"递归槽位"语义,v2 需要"flat"。**
+
+- 现状:`Basic.lean` 的 `Deriv.app` 输入是 `DerivList`(每个输入是**完整子推导** `Deriv`),所以 `N→D N` 的 N 槽能填**任意 N-子树**——包括另一条 `N→D N`。即 kernel 按**递归**解释,`linear₁` 生成无限语言 {D N, D D N, …}。
+- spec §2.1 要 **flat**:每槽恰消耗**一个词**(lex),`N→D N` = "一个 lex D + 一个 lex N";`linear₁` = 有限模板集 `{[D,N], [D,A,N]}`,不是递归无限语言。
+- 差在哪:递归语义下"模板窮舉/长度排除/逐模板 law preservation"都不可靠(N 槽可无限展开)。故 flat 必须**型别层显式分层**,否则后续 expand/close/cut 全踩空。
+- 处置:递归 `Deriv` **不删**(它是 W3 的料,spec §2.2),另起 flat 层。
+
+## v2-B. Flat 层设计(spec §2.3:方案 A vs B)
+
+**选方案 A(拆分关系)**,代码 `BareSyntax/Flat.lean`:
+- `FlatTemplate`(`result` + `slots : List Cat`,每槽一个词类)、`FlatGrammar`(Cat/词库/模板表)、`FlatLicensed`(= `words.length = slots.length ∧ ∀ 配对 ∈ 词库`)、`CanYieldFlat`(∃ 结果范畴对的模板被许可)。
+- 与递归 `Deriv` **完全分开**,不共用含混 `Licensed`——正是 spec §2.3 的要求。
+
+**为何 A 不 B**:方案 B(`Slot` 标 `lex`/`tree`)要在**同一** `Deriv` 里混两种槽语义,会把 flat 的"每槽一词"和递归的"每槽一子树"塞进一个构造子,`applyRule` 得按标签分叉——正是 spec 警告的"含混 `Licensed`"。A 把两套关系彻底隔开,flat 层的定理/tactic 不受递归拖累。**代价**:两套关系不共享引理,W2→W3 升级时 flat 结果要显式"抬"进 tree 层(spec §1.4 要的正是这种"升级不推翻"——A 下是加一层 refinement,可接受)。
+
+**摩擦记录**:
+- `List.Forall₂` 在本工具链不可用(非 Mathlib),`FlatLicensed` 改用**显式 length 合取 + `zip` 逐对**——反而更顺:`close length` 直接吃第一个合取,`close category at i` 吃 zip 的第 i 对。
+- `FlatGrammar.Cat` 仍是投影,`.D` 点记法认不出(写全 `Linear1Cat.D`);`instDecEqCat` 干扰同前(§4.3)。
+- **§8 词汇歧义口子已留**:词库是 `List (String × Cat)`,一个词可多次出现(多词类);`FlatLicensed` 的配对 `(w, slot) ∈ 词库` 天然量化"该词的某个词类等于槽"——即便当前每词一类,接口已对所有 readings 量化。
+
+## v2-C. Expand/Close 首关(长度失配)+ 玩家步数
+
+**关卡**:`¬ CanYieldFlat linear₁flat ["a","house","good","room"] N`(D N A N,长 4;模板长 2/3,每条 route 死于长度)。玩家三件工具 `suppose`/`expand`/`close length`(`Flat.lean`,elab tactic)。
+
+**玩家动作序列(逐步标注:判断 vs 被藏的 Lean 杂活)**:
+
+| # | 玩家打的 | 玩家面对的判断 | 类别 |
+|---|---|---|---|
+| 1 | `suppose` | —(假设"能生成",拆出 route + 许可) | **杂活**(intro + 拆 ∃) |
+| 2 | `expand` | 这个主张能从哪些 route 来?列出 `[D,N]`、`[D,A,N]` | **判断**(认清 route 清单) |
+| 3 | `close length` | route `[D,N]` 为何不成立?——**长度**(4 词 ≠ 2 槽) | **判断**(选 route + 判失配类型=长度) |
+| 4 | `close length` | route `[D,A,N]` 呢?——**长度**(4 ≠ 3) | **判断** |
+
+- **玩家判断:3 个**(枚举 route + 对每条 route 申报"长度"失配)。**红线达标**:`close length` **只核对**——玩家申报"长度",系统验 `words.length ≠ slots.length`;若长度其实相等(如 `a good good` 的 `[D,A,N]` 支,3=3),`close length` **报错拒绝**(实测:`decide proved ¬… is false`),逼玩家改用 `close category`。玩家**不碰** `rfl`/`simp`/`decide`——那些只在编译后 proof term 里。
+- **被藏的 Lean 杂活**:拆 ∃、模板表投影展开、`List.length` 计算、`absurd`+`decide` 生成的行政证明——全在 tactic 内部,不泄露到玩家层(spec §15/§16)。
+- **报错人话化**:目前拒绝信息还是 Lean 腔(`decide proved ¬… is false`)。spec §5/§16 要换成人话(如 `✗ 这条 route 长度并不失配,不能 close length`),数据都在(词数、槽数),属战术层包装,**本单未做**(和旧路线 A 的错误包装同性质)。
+
+**generalize 待办(已在代码注释标)**:`expand` 现在把 `linear₁flat` 写死在 simp 集里;通用化 = 从 membership 假设读出 grammar 常量再 unfold。不影响首关,记账。
 
 ---
 
