@@ -14,8 +14,8 @@ For: 小姜(派单 claude-code-brief-bg-slice.md)/ 小红(集成:review + build 
 - `BareSyntax.lean` — 库根;`lakefile.lean` 加了 `lean_lib BareSyntax`(在 `@[default_target]` 之前,防地雷 2)。
 - `BareSyntax/REPORT.md` — **主报告**:三路线状态、A/B 玩家步数表、验收判定、规则表示摩擦(供终审)、偏离与发现。
 
-## 结论(REPORT 详述)
-**否定证明可玩,当且仅当走路线 A**(玩家宣称"死范畴"+系统 `decide` 复核规则表):**2 玩家步、1 新动作,达标**。路线 B(裸反演)~47 步、多新动作,**不达标**——正是反面对照。这回答了施工单的关键路径问题。
+## 结论(REPORT 详述,路线 A 已按维护者裁决重做)
+**旧路线 A(`dead_category` 一键 + 整表 `decide`)被否为神键**(替玩家做了句法判断)。**重做后**:作者只证纯结构归纳 plumbing `deadYield`(`hdead` 死范畴当参数);玩家**逐条**核规则表(一条规则=一步真判断,无整表扫)。`route_A` 里 **5 个句法判断全在玩家手里,4 处纯 Lean 杂活被藏**——REPORT §2 有逐步"判断 vs 杂活"标注。新验收线(玩家亲历每步判断 + tactic 只藏 Lean + 报错可读):**达标**。路线 B(裸反演,~47 步、什么都没藏)是反面对照。这回答了施工单的关键路径问题:**否定可玩,前提是拆成玩家逐步亲历的判断,不是神键**。
 
 ## 验证
 - `lake build`(默认 Game)→ v1 完好,63 jobs。

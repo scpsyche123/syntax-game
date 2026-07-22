@@ -34,58 +34,106 @@ def linear₁ : BareGrammar where
   lexicon := [(["a"], .D), (["very"], .Adv), (["good"], .A), (["day"], .N)]
   rules   := [ruleDN, ruleDAN]
 
-/-! ### Route A — reusable dead-category lemma (the player-facing route)
+/-! ### Route A — the player LIVES THROUGH the dead-category argument
 
-Player action: claim "the category Adv appears at no rule position, so any word
-of category Adv is unusable"; the system rechecks the rule table (decidable)
-and the structural lemma discharges the goal. -/
+Redesign (maintainer ruling): a single `dead_category Adv` tactic that
+recognises the category, scans the whole table, and concludes is a **god key**
+— it does the linguistic judgment FOR the player. Forbidden. A custom tactic
+may only absorb Lean plumbing + humanise errors; every syntactic judgment stays
+a player move.
 
-/-- The categories at some position of some rule — the rule table read as data. -/
+So the "dead category" fact is NOT proved inside the plumbing and NOT scanned by
+one `decide`. It is a HYPOTHESIS the player builds **rule by rule**. The author
+proves only the pure structural plumbing (`deadYield`): "if a category is
+accepted at no rule position, a word whose only lexicon category is that one
+cannot appear in any derivation". Given that plumbing, the player's proof is a
+sequence of genuine judgments (annotated in `route_A` and REPORT §2). -/
+
+/-- The categories at some position of some rule — the rule table as data. Used
+    for display/tooling, NOT as a whole-table `decide` in the player proof (that
+    would be the banned god-key). -/
 def usedCats (G : BareGrammar) : List G.Cat := G.rules.flatMap Rule.posCat
 
-/-- Decidable witness of the player's claim: `Adv` occurs at no rule position. -/
-example : Linear1Cat.Adv ∉ usedCats linear₁ := by decide
-
-/- **Core structural lemma.** Any `linear₁` derivation whose category is not
-   `Adv` yields a string without `very`. Mutual structural recursion with
-   `noVeryL` (match on constructors — no `induction` tactic, per project rule). -/
+/- **PLUMBING (author-proved, pure Lean — no linguistic judgment).** For ANY
+   grammar and dead category `c`: if `c` is accepted at no rule position
+   (`hdead`, supplied by the player) and `w`'s only lexicon category is `c`
+   (`hw`), then no derivation whose category is not `c` yields `w`. The
+   `hdead`/`hw` hypotheses are exactly where the player's judgments plug in.
+   Mutual structural recursion (match, no `induction` tactic). -/
 mutual
-def noVery : {s : List String} → {C : Linear1Cat} →
-    Deriv linear₁ (s, C) → C ≠ Linear1Cat.Adv → "very" ∉ s
-  | _, _, .lex hmem, hC => by
-      simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at hmem
-      rcases hmem with h | h | h | h <;>
-        · rw [Prod.mk.injEq] at h
-          obtain ⟨rfl, hc⟩ := h
-          first | decide | exact absurd hc hC
+def deadYield {G : BareGrammar} {c : G.Cat} {w : String}
+    (hdead : ∀ r ∈ G.rules, c ∉ r.posCat)
+    (hw : ∀ e ∈ G.lexicon, w ∈ e.1 → e.2 = c)
+    (hbuild : ∀ r ∈ G.rules, r.build = List.flatten) :
+    {s : List String} → {C : G.Cat} → Deriv G (s, C) → C ≠ c → w ∉ s
+  | _, _, .lex hmem, hC => fun hws => hC (hw _ hmem hws)
   | _, _, .app hr dl happly, _ => by
-      simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;>
-        · simp only [applyRule, ruleDN, ruleDAN] at happly
-          split at happly
-          · rename_i hcat
-            rw [Option.some.injEq, Prod.mk.injEq] at happly
-            obtain ⟨hs, _⟩ := happly
-            subst hs
-            refine noVeryL dl (fun e he heq => ?_)
-            have hm := List.mem_map_of_mem (f := Prod.snd) he
-            rw [hcat, heq] at hm
-            exact absurd hm (by decide)
-          · exact absurd happly (by simp)
-def noVeryL : {inputs : List (Expr Linear1Cat)} →
-    DerivList linear₁ inputs → (∀ e ∈ inputs, (Prod.snd e) ≠ Linear1Cat.Adv) →
-    "very" ∉ (List.map Prod.fst inputs).flatten
+      intro hws
+      simp only [applyRule] at happly
+      split at happly
+      · rename_i hcat
+        rw [Option.some.injEq, Prod.mk.injEq] at happly
+        obtain ⟨hs, _⟩ := happly
+        rw [hbuild _ hr] at hs
+        subst hs
+        refine deadYieldL hdead hw hbuild dl (fun e he heq => ?_) hws
+        have hm := List.mem_map_of_mem (f := Prod.snd) he
+        rw [hcat] at hm
+        exact hdead _ hr (heq ▸ hm)
+      · exact absurd happly (by simp)
+def deadYieldL {G : BareGrammar} {c : G.Cat} {w : String}
+    (hdead : ∀ r ∈ G.rules, c ∉ r.posCat)
+    (hw : ∀ e ∈ G.lexicon, w ∈ e.1 → e.2 = c)
+    (hbuild : ∀ r ∈ G.rules, r.build = List.flatten) :
+    {inputs : List (Expr G.Cat)} → DerivList G inputs →
+    (∀ e ∈ inputs, (Prod.snd e) ≠ c) → w ∉ (List.map Prod.fst inputs).flatten
   | _, .nil, _ => by simp
   | _, .cons d rest, h => by
       simp only [List.map_cons, List.flatten_cons, List.mem_append, not_or]
-      exact ⟨noVery d (h _ (by simp)), noVeryL rest (fun e he => h e (by simp [he]))⟩
+      exact ⟨deadYield hdead hw hbuild d (h _ (by simp)),
+             deadYieldL hdead hw hbuild rest (fun e he => h e (by simp [he]))⟩
 end
 
-/-- **Route A result.** `very` is a dead-category word, so the target is not
-    derivable. Two conceptual player steps: assert the reason, recheck the table. -/
+/-- PLUMBING: every `linear₁` rule concatenates its inputs' strings. (Author
+    fact about the rule table, not a per-derivation judgment.) -/
+theorem linear₁_concat : ∀ r ∈ linear₁.rules, r.build = List.flatten := by
+  intro r hr
+  simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl <;> rfl
+
+/-- Specialisation used by Route B's baseline (author convenience — hides the
+    per-rule check, which is fine there since Route B is the anti-example). -/
+theorem noVery {s C} (d : Deriv linear₁ (s, C)) (hC : C ≠ Linear1Cat.Adv) : "very" ∉ s :=
+  deadYield
+    (fun r hr => by
+      simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> decide)
+    (by decide) linear₁_concat d hC
+
+/-- **Route A result — the player's judgment sequence.** Each `?case` is a
+    genuine syntactic judgment the player makes; `deadYield` is the only thing
+    hidden, and it is pure Lean plumbing (no judgment). See REPORT §2 for the
+    step-by-step annotation of judgment vs. hidden-plumbing. -/
 theorem route_A : ¬ CanYield linear₁ ["a", "very", "good", "day"] Linear1Cat.N := by
   rintro ⟨d⟩
-  exact noVery d (by decide) (by decide)
+  refine deadYield (c := Linear1Cat.Adv) (w := "very")
+    ?dead ?veryCat linear₁_concat d ?tgtCat ?inTarget
+  -- JUDGMENT: check the rule table ONE RULE AT A TIME (never a whole-table scan)
+  case dead =>
+    intro r hr
+    simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl        -- "the table has two rules; I inspect each"
+    · decide                        -- rule N→D N: positions are D, N — no Adv
+    · decide                        -- rule N→D A N: positions are D, A, N — no Adv
+  -- JUDGMENT: what category can "very" be? only Adv (from the lexicon)
+  case veryCat =>
+    intro e he hwe
+    simp only [linear₁, List.mem_cons, List.not_mem_nil, or_false] at he
+    rcases he with rfl | rfl | rfl | rfl <;> simp_all
+  -- plumbing: the goal category N is not Adv (trivial, hidden)
+  case tgtCat => exact fun h => Linear1Cat.noConfusion h
+  -- JUDGMENT: locate "very" in the target string
+  case inTarget => decide
 
 /-! ### Route B — bare cases inversion (verbose baseline)
 
